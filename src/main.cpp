@@ -14,29 +14,65 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
+#include <Stepper.h>
+#include "soc/rtc.h"
+#include "esp32/pm.h"
+
+
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
 
+//task handle
+TaskHandle_t TaskCom;
+
+
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "YourAuthToken";
+char auth[] = "1334465b93034f92ad14742fb88eb305";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-char ssid[] = "YourNetworkName";
-char pass[] = "YourPassword";
+char ssid[] = "HONDAGMC";
+char pass[] = "18182321yougi";
 
-#define LED1 9
+//define
+#define LED1 5
 #define LED2 10
+WidgetLED led(V2);
+
+//sub program
+void stepperMotor();
+void blink();
+void consoleDebug(String String1ToPrint,String String2ToPrint);
+void TaskCommunication(void * parameter);
+
+//constante
+const int stepsPerRevolution = 2038;  // change this to fit the number of steps per revolution
+const long interval = 1000; 
+
+// initialize the stepper library on pins 8 through 11:
+Stepper myStepper(stepsPerRevolution, 23, 19, 22, 21);
+
+//variable
+int ledState = LOW;   
+int stepCount = 0;  // number of steps the motor has taken
+unsigned long previousMillis = 0;  
  
 void setup() 
 {
+  //myStepper.setSpeed(30);
   // Set pin mode
-  pinMode(LED1,OUTPUT);
-  pinMode(LED2,OUTPUT);
+  pinMode(25,INPUT);
 
-  // Connect to wifi
+  //Connect to wifi
+  Blynk.begin(auth, ssid, pass);
+
+  //initialsation of new task
+  xTaskCreatePinnedToCore(TaskCommunication, "TaskCom", 1000, NULL, 1, &TaskCom, 0);
+
+  //changing cpu speed
+  rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 
 
   //initial setup of the blind
@@ -45,10 +81,71 @@ void setup()
  
 void loop() 
 {
-  delay(500);
-  digitalWrite(LED1,HIGH);
-  digitalWrite(LED2,LOW);
-  delay(500);
-  digitalWrite(LED1,LOW);
-  digitalWrite(LED2,HIGH);
+  //stepperMotor();
+
+  //get core id running on
+  //int test = xPortGetCoreID(); 
+
+  blink();
+}
+
+void TaskCommunication(void * parameter)
+{
+  for(;;)
+  {
+    Blynk.run();
+    sleep(7);
+  }
+}
+
+void blink()
+{
+  //use de millis function because non blocking function and when cpu freq is change delay() suck
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) 
+    {
+      ledState = HIGH;
+      led.on() ;
+    }
+    else
+    {
+      ledState = LOW;
+      led.off() ;
+    }
+  }
+
+  return;
+}
+
+void stepperMotor()
+{
+  // read the sensor value:
+
+
+  // map it to a range from 0 to 100:
+  //int motorSpeed = map(500, 0, 1023, 0, 100);
+  
+  myStepper.setSpeed(6); // 1 rpm
+  myStepper.step(2038); // do 2038 steps -- corresponds to one revolution in one minute
+  delay(4000); // wait for one second
+  myStepper.setSpeed(4); // 6 rpm
+  myStepper.step(-2038); // do 2038 steps in the other direction with faster 
+  delay(4000); // wait for one second
+
+  return;
+
+}
+
+void consoleDebug(String String1ToPrint,String String2ToPrint)
+{
+  Blynk.virtualWrite(V0, String1ToPrint);
+  Blynk.virtualWrite(V1, String2ToPrint);
+
+  return;
 }
