@@ -61,22 +61,29 @@ unsigned long previousMillis = 0;
  
 void setup() 
 {
-  //myStepper.setSpeed(30);
-  // Set pin mode
+  //close what we don't use
+  esp_bluedroid_disable();
+  esp_bt_controller_disable();
+
+  //enable wakup sourcce
+  esp_sleep_enable_timer_wakeup();
+   
+  // Set pins modes
   pinMode(25,INPUT);
 
   //Connect to wifi
   Blynk.begin(auth, ssid, pass);
 
-  //initialsation of new task
-  xTaskCreatePinnedToCore(TaskCommunication, "TaskCom", 1000, NULL, 1, &TaskCom, 0);
+  //initialsation of new task 
+  xTaskCreatePinnedToCore(TaskCommunication, "TaskCom", 1000, NULL, 2, &TaskCom, 1);
+  xTaskCreatePinnedToCore(TaskMoteur, "TaskMot", 1000, NULL, 1, &TaskMot, 1);
+  xTaskCreatePinnedToCore(TaskSensor, "TaskSen", 1000, NULL, 1, &TaskSen, 1);
 
   //changing cpu speed
   rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 
-
   //initial setup of the blind
-
+  
 }
  
 void loop() 
@@ -91,10 +98,62 @@ void loop()
 
 void TaskCommunication(void * parameter)
 {
+  //setup for comz 
+
+  //run task comz
   for(;;)
   {
+    //give ping to blynk and get value if change
     Blynk.run();
-    sleep(7);
+
+    //if no new value shut down wifi
+    esp_wifi_stop();
+
+    //go to sleep for 10 sec or GPIO press
+    esp_light_sleep_start() 
+    
+  }
+}
+
+void TaskMoteur(void * parameter)
+{
+  //setup for motor
+
+  //run task motor
+  for(;;)
+  {
+    //si manuelle attend un mouvement des GPIO/Blynk
+
+      //compte le nombre de step a tournee 
+
+      //met a jour blynk
+
+      //retourne a attendre une nouvelle commande
+
+    //si automatique attend un mouvement des Sensor/IA/GPIO/Blynk
+
+      //compte le nombre de step a tournee 
+
+      //met a jour blynk
+
+      //retourne a attendre une nouvelle commande
+  }
+}
+
+void TaskSensor(void * parameter)
+{
+  //setup for sensor
+
+  //run task sensor
+  for(;;)
+  {
+    //A chaque X wake up 
+
+    //update inside temp
+
+    //update outside temp
+
+    //update sun on the window
   }
 }
 
