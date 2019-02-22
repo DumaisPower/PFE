@@ -11,13 +11,17 @@
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 
 #include <Arduino.h>
-#include <WiFi.h>
+#include <esp_wifi.h>
+#include <esp_bt.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 #include <Stepper.h>
 #include "soc/rtc.h"
 #include "esp32/pm.h"
-
+#include "Esp.h"
+#include "esp_task.h"
+#include "esp_err.h"
+#include "esp_bt_main.h"
 
 
 /* Comment this out to disable prints and save space */
@@ -25,7 +29,8 @@
 
 //task handle
 TaskHandle_t TaskCom;
-
+TaskHandle_t TaskMot;
+TaskHandle_t TaskSen;
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
@@ -36,15 +41,20 @@ char auth[] = "1334465b93034f92ad14742fb88eb305";
 char ssid[] = "HONDAGMC";
 char pass[] = "18182321yougi";
 
-//define
+//define widget
 #define LED1 5
 #define LED2 10
+WidgetTerminal terminal(V0);
 WidgetLED led(V2);
 
-//sub program
+//sub program declaration
 void stepperMotor();
 void blink();
 void consoleDebug(String String1ToPrint,String String2ToPrint);
+
+//task declaration
+void TaskMoteur(void * parameter);
+void TaskSensor(void * parameter);
 void TaskCommunication(void * parameter);
 
 //constante
@@ -66,7 +76,7 @@ void setup()
   esp_bt_controller_disable();
 
   //enable wakup sourcce
-  esp_sleep_enable_timer_wakeup();
+  esp_sleep_enable_timer_wakeup(10000000);
    
   // Set pins modes
   pinMode(25,INPUT);
@@ -74,10 +84,20 @@ void setup()
   //Connect to wifi
   Blynk.begin(auth, ssid, pass);
 
+  // This will print Blynk Software version to the Terminal Widget when
+  // your hardware gets connected to Blynk Server
+  terminal.println(F("Blynk v" BLYNK_VERSION ": Device started"));
+  terminal.println(F("-------------"));
+  terminal.println(F("Type 'Marco' and get a reply, or type"));
+  terminal.println(F("anything else and get it printed back."));
+  terminal.flush();
+
+
+
   //initialsation of new task 
-  xTaskCreatePinnedToCore(TaskCommunication, "TaskCom", 1000, NULL, 2, &TaskCom, 1);
-  xTaskCreatePinnedToCore(TaskMoteur, "TaskMot", 1000, NULL, 1, &TaskMot, 1);
-  xTaskCreatePinnedToCore(TaskSensor, "TaskSen", 1000, NULL, 1, &TaskSen, 1);
+  //xTaskCreatePinnedToCore(TaskCommunication, "TaskCom", 1000, NULL, 1, &TaskCom, 1);
+  //xTaskCreatePinnedToCore(TaskMoteur, "TaskMot", 1000, NULL, 1, &TaskMot, 1);
+  //xTaskCreatePinnedToCore(TaskSensor, "TaskSen", 1000, NULL, 1, &TaskSen, 1);
 
   //changing cpu speed
   rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
@@ -88,12 +108,12 @@ void setup()
  
 void loop() 
 {
-  //stepperMotor();
-
+  
+  consoleDebug("test7","test8");
   //get core id running on
   //int test = xPortGetCoreID(); 
 
-  blink();
+
 }
 
 void TaskCommunication(void * parameter)
@@ -106,11 +126,13 @@ void TaskCommunication(void * parameter)
     //give ping to blynk and get value if change
     Blynk.run();
 
+    consoleDebug("test2","test");
+
     //if no new value shut down wifi
-    esp_wifi_stop();
+    //esp_wifi_stop();
 
     //go to sleep for 10 sec or GPIO press
-    esp_light_sleep_start() 
+    //esp_light_sleep_start() ;
     
   }
 }
@@ -118,12 +140,13 @@ void TaskCommunication(void * parameter)
 void TaskMoteur(void * parameter)
 {
   //setup for motor
-
+  myStepper.setSpeed(8); // 8 rpm
   //run task motor
   for(;;)
   {
+    //stepperMotor();
     //si manuelle attend un mouvement des GPIO/Blynk
-
+      consoleDebug("test3","test4");
       //compte le nombre de step a tournee 
 
       //met a jour blynk
@@ -147,6 +170,7 @@ void TaskSensor(void * parameter)
   //run task sensor
   for(;;)
   {
+    consoleDebug("test5","test6");
     //A chaque X wake up 
 
     //update inside temp
@@ -190,12 +214,11 @@ void stepperMotor()
   // map it to a range from 0 to 100:
   //int motorSpeed = map(500, 0, 1023, 0, 100);
   
-  myStepper.setSpeed(6); // 1 rpm
+  
   myStepper.step(2038); // do 2038 steps -- corresponds to one revolution in one minute
-  delay(4000); // wait for one second
-  myStepper.setSpeed(4); // 6 rpm
-  myStepper.step(-2038); // do 2038 steps in the other direction with faster 
-  delay(4000); // wait for one second
+   // wait for one second
+  // do 2038 steps in the other direction with faster 
+  // wait for one second
 
   return;
 
@@ -203,8 +226,9 @@ void stepperMotor()
 
 void consoleDebug(String String1ToPrint,String String2ToPrint)
 {
-  Blynk.virtualWrite(V0, String1ToPrint);
-  Blynk.virtualWrite(V1, String2ToPrint);
-
+  terminal.print(String1ToPrint);
+  terminal.print(String2ToPrint);
+  terminal.flush();
+  Blynk.run();
   return;
 }
