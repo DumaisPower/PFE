@@ -15,7 +15,6 @@
 
 #include <esp_bt.h>
 #include <BlynkSimpleEsp32.h>
-#include <Stepper.h>
 #include "soc/rtc.h"
 #include "esp32/pm.h"
 #include "esp_bt_main.h"
@@ -25,6 +24,28 @@
 #include "esp_system.h"
 #include "esp_event.h"
 
+#include "config.h"
+#include "sensor.h"
+#include "motor.h"
+#include "ia.h"
+
+
+/**********************************Motor stuff*************************/
+// Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
+#define MOTOR_STEPS 400
+#define MICROSTEPS 1
+
+// Target RPM for cruise speed
+#define RPM 60
+
+#define DIR 22
+#define STEP 21
+#define SLEEP 19 
+
+#include "DRV8834.h"
+#define M0 10
+#define M1 11
+DRV8834 stepper(MOTOR_STEPS, DIR, STEP, SLEEP/*, M0, M1*/);
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -55,7 +76,7 @@ void GoToSleep();
 TaskHandle_t TaskCom;
 TaskHandle_t TaskMot;
 TaskHandle_t TaskSen;
-int nTask = 3;
+int nTasks = 3;
 
 //task declaration
 void TaskMoteur(void * parameter);
@@ -66,8 +87,6 @@ void TaskCommunication(void * parameter);
 const int stepsPerRevolution = 2038;  // change this to fit the number of steps per revolution
 const long interval = 1000; 
 
-// initialize the stepper library on pins 8 through 11:
-Stepper myStepper(stepsPerRevolution, 23, 19, 22, 21);
 
 //variable
 int ledState = LOW;   
@@ -79,7 +98,9 @@ BluetoothSerial ESP_BT;
 //define semaphore for task manager
 SemaphoreHandle_t SemaphoreMotor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t SemaphoreSensor = xSemaphoreCreateCounting( 1, 0 );
-SemaphoreHandle_t SemaphoreBarrier = xSemaphoreCreateCounting( nTask, 0 );
+SemaphoreHandle_t BarrierComz = xSemaphoreCreateCounting( 1, 0 );
+SemaphoreHandle_t BarrierMotor = xSemaphoreCreateCounting( 1, 0 );
+//SemaphoreHandle_t SemaphoreBarrier = xSemaphoreCreateCounting( nTasks, 0 );
 
 void setup()
 {
@@ -103,6 +124,7 @@ void setup()
   terminal.println(F("Blynk v" BLYNK_VERSION ": Device started"));
   terminal.println(F("-------------"));
   
+
   /* If we use other app than blynk it might be useful*/
   // consoleErr(esp_wifi_init(&config), "esp_wifi_init : ");
   // delay(300); 
@@ -160,6 +182,17 @@ void setup()
 
   delay(500); 
 
+
+terminal.println("Tasks launched and semaphore passed...");
+
+  stepper.begin(RPM, MICROSTEPS);
+    // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
+    // stepper.setEnableActiveState(LOW);
+  stepper.enable();
+
+  stepper.startRotate(360);
+
+
   //changing cpu speed
   //rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 
@@ -169,15 +202,20 @@ void setup()
  
 void TaskCommunication(void * parameter)
 {
-  //setup for comz 
+  //setup for comz
+  terminal.println("Task Comz Start");
+
   unsigned long currentMillis;
   unsigned long nextMillis = 0;  
   String err;
-
+  int sensorValue ;
   /* The parameter value is expected to be 1 as 1 is passed in the
   pvParameters value in the call to xTaskCreate() below.*/ 
   //configASSERT( ( ( uint32_t ) parameter ) == 1 );
- 
+
+ //waiting every task to be setup
+  xSemaphoreTake(BarrierComz, portMAX_DELAY);
+
  //run task comz
   while(1)
   {
@@ -186,13 +224,15 @@ void TaskCommunication(void * parameter)
     {
       consoleDebug("test0");
       nextMillis = currentMillis;
+      stepper.enable();
+      stepper.rotate(360);
+      stepper.disable();
     }
 
     //give ping to blynk and get value if change
 
     // //if no new value shut down wifi
-    GoToSleep();
-  
+    //GoToSleep();
 
   }
   vTaskDelete( NULL );
@@ -221,7 +261,8 @@ void GoToSleep()
 void TaskMoteur(void * parameter)
 {
   //setup for motor
-  myStepper.setSpeed(8); // 8 rpm
+  terminal.println("Task Motor Start");
+ 
   unsigned long currentMillis;
   unsigned long nextMillis = 0;
 
@@ -229,16 +270,21 @@ void TaskMoteur(void * parameter)
   pvParameters value in the call to xTaskCreate() below.*/ 
  //configASSERT( ( ( uint32_t ) parameter ) == 1 );
 
+  xSemaphoreTake(BarrierMotor, portMAX_DELAY);
+  xSemaphoreGive(BarrierComz);
   //run task motor
   while(1)
   {
+
+    //wating for a command
+    xSemaphoreTake(SemaphoreMotor, portMAX_DELAY);
+
     //step.perMotor();
 
     currentMillis = millis();
     if (currentMillis  > nextMillis + 7000)
     {
       consoleDebug("test1");
-      terminal.println(millis());
       Blynk.run();
       nextMillis = currentMillis;
     }
@@ -265,6 +311,9 @@ void TaskMoteur(void * parameter)
 
 void TaskSensor(void * parameter)
 {
+
+  terminal.println("Task Sensor Start");
+ 
   //setup for sensor
   unsigned long currentMillis ;
   unsigned long nextMillis = 0;  
@@ -274,8 +323,14 @@ void TaskSensor(void * parameter)
   pvParameters value in the call to xTaskCreate() below.*/ 
  //configASSERT( ( ( uint32_t ) parameter ) == 1 );
 
+  xSemaphoreGive(BarrierMotor);
+  
   while(1)
   {
+
+    //wating for a command
+    xSemaphoreTake(SemaphoreSensor, portMAX_DELAY);
+
     currentMillis = millis();
     if (currentMillis  > nextMillis + 7000)
     {
@@ -325,7 +380,8 @@ void stepperMotor()
 {
   // read the sensor value:
 
-  myStepper.step(2038); // do 2038 steps -- corresponds to one revolution in one minute
+
+   // do 2038 steps -- corresponds to one revolution in one minute
    // wait for one second
   // do 2038 steps in the other direction with faster 
   // wait for one second
@@ -356,6 +412,5 @@ void consoleDebug(String StringToPrint)
 
 void loop() 
 {
-  
-
+  vTaskSuspend(NULL);
 }
