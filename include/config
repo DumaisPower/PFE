@@ -1,6 +1,0 @@
-#ifndef CONFIG_H_   /* Include guard */
-#define CONFIG_H_
-
-int foo(int x);  /* An example function declaration */
-
-#endif // CONFIG_H_
