@@ -81,7 +81,7 @@ void Task_Sensor(void * parameter)
       console_Debug_Double(insideTemp);
       Blynk_Virtual_Write(1, insideTemp);
 
-      SunLevel = Get_Sun();
+      SunLevel = Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
       console_Debug("Sun Level");
       console_Debug_Double(SunLevel);
 
