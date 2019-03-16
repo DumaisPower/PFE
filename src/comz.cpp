@@ -1,3 +1,14 @@
+/*⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆ 
+⋆  Project: PFE 
+⋆  Function: 
+⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆ 
+⋆  $Author: DumaisPower  
+⋆  $Name: Dany Dumais   
+⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆ 
+⋆ 
+⋆  Copyright 2019 by  
+⋆ 
+⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "comz.h"
 
 #include <BlynkSimpleEsp32.h>
@@ -141,5 +152,32 @@ void console_Debug(String StringToPrint)
   terminal.flush();
   
   return;
+}
+
+void console_Debug_Int(int IntToPrint)
+{
+  terminal.println(IntToPrint);
+  Blynk.run();
+  delay(200);
+  terminal.flush();
+  
+  return;
+
+}
+
+void console_Debug_Double(double DoubleToPrint)
+{
+  terminal.println(DoubleToPrint);
+  Blynk.run();
+  delay(200);
+  terminal.flush();
+  
+  return;
+
+}
+
+void Blynk_Virtual_Write(int pin, double Value)
+{
+  Blynk.virtualWrite(pin, Value);
 }
 

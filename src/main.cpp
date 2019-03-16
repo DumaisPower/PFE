@@ -10,7 +10,7 @@
 ⋆ 
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 
-/***********************ESP32 LIB***************************************/
+/*********************************ESP32 LIB***************************************/
 #include "BluetoothSerial.h" 
 #include <esp_bt.h>
 #include "soc/rtc.h"
@@ -21,36 +21,24 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_system.h"
 #include "esp_event.h"
-
-
-/*******************************Include File**************************/
-#include "sensor.h"
+/*****************************Include File**************************/
+#include "capteur.h"
 #include "comz.h"
 #include "motor.h"
 #include "ia.h"
-
-
-/***************************************sub program declaration******************************/
+/*************************sub program declaration******************************/
 void Config_Init();
 
-//constante
- const int stepsPerRevolution = 2038;  // change this to fit the number of steps per revolution
- const long interval = 1000; 
 
-
-//variable
- int ledState = LOW;   
- int stepCount = 0;  // number of steps the motor has taken
-
-wifi_init_config_t config ;
- BluetoothSerial ESP_BT;
-
-//define semaphore for task manager
+/**********************Semaphore for task manager********************************/
 SemaphoreHandle_t SemaphoreMotor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t SemaphoreSensor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierComz = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierMotor = xSemaphoreCreateCounting( 1, 0 );
-//SemaphoreHandle_t SemaphoreBarrier = xSemaphoreCreateCounting( nTasks, 0 );
+
+
+wifi_init_config_t config ;
+ BluetoothSerial ESP_BT;
 
 void setup()
 {

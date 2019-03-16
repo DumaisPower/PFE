@@ -9,93 +9,112 @@
 ⋆  Copyright 2019 by  
 ⋆ 
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
-#include "motor.h"
+#include "capteur.h"
+
+void Task_Sensor(void * parameter);
+TaskHandle_t TaskSen;
 
 
-DRV8834 stepper(MOTOR_STEPS, DIR, STEP, SLEEP/*, M0, M1*/);
-
-void Task_Moteur(void * parameter);
-TaskHandle_t TaskMot;
+Adafruit_MLX90614 IR_Sensor = Adafruit_MLX90614();
+TwoWire I2Cone = TwoWire(0);
 
 extern SemaphoreHandle_t	BarrierMotor;
 extern SemaphoreHandle_t	BarrierComz;
-extern SemaphoreHandle_t	SemaphoreMotor;
+extern SemaphoreHandle_t	SemaphoreSensor;
 
+/******************Variable**********************/
+double insideTemp;
+double SunLevel;
 
-void Motor_Init()
+void Sensor_Init()
 {
-    xTaskCreatePinnedToCore(
-                    Task_Moteur,                 /* Task function. */
-                    "TaskMot",                  /* String with name of task. */
+
+          xTaskCreatePinnedToCore(
+                    Task_Sensor,                  /* Task function. */
+                    "TaskSen",                  /* String with name of task. */
                     10000,                      /* Stack size in bytes. */
                     NULL,                       /* Parameter passed as input of the task */
                     15,                         /* Priority of the task. */
                     NULL,                       /* task handler. */     
                     1);                         /* Core id. */
-    
-    delay(500); 
+
+  delay(500); 
+
+  Wire.begin(SDA1,SCL1);
+  //I2Cone.begin(SDA1,SCL1,400000); // SDA pin 21, SCL pin 22 TTGO TQ
+
 
 }
 
-
-void Task_Moteur(void * parameter)
+void Task_Sensor(void * parameter)
 {
-  //setup for motor
-  //terminal.println("Task Motor Start");
+
+  //terminal.println("Task Sensor Start");
  
-  unsigned long currentMillis;
-  unsigned long nextMillis = 0;
-
-  stepper.begin(RPM, MICROSTEPS);
-    // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-    // stepper.setEnableActiveState(LOW);
-  stepper.enable();
-
-  stepper.startRotate(360);
+  pinMode(AnalogTMP,INPUT);
+  pinMode(AnalogSUN,INPUT);
+  //setup for sensor
+  unsigned long currentMillis ;
+  unsigned long nextMillis = 0;  
+  //run task sensor
 
   /* The parameter value is expected to be 1 as 1 is passed in the
   pvParameters value in the call to xTaskCreate() below.*/ 
  //configASSERT( ( ( uint32_t ) parameter ) == 1 );
 
-  xSemaphoreTake(BarrierMotor, portMAX_DELAY);
-  xSemaphoreGive(BarrierComz);
-  //run task motor
+  xSemaphoreGive(BarrierMotor);
+  
   while(1)
   {
 
     //wating for a command
-    xSemaphoreTake(SemaphoreMotor, portMAX_DELAY);
-
-    //stepperMotor();
+    xSemaphoreTake(SemaphoreSensor, portMAX_DELAY);
 
     currentMillis = millis();
     if (currentMillis  > nextMillis + 7000)
     {
-      console_Debug("test1");
-      stepper.enable();
-      stepper.rotate(360);
-      stepper.disable();
+      console_Debug("test2");
       nextMillis = currentMillis;
+      insideTemp = Get_Inside_Temp();
+      insideTemp = ((insideTemp*(3300.00/1024.00) - 150) / 100.000);
+      console_Debug("ambiant Analog temp");
+      console_Debug_Double(insideTemp);
+      Blynk_Virtual_Write(1, insideTemp);
+
+      SunLevel = Get_Sun();
+      console_Debug("Sun Level");
+      console_Debug_Double(SunLevel);
+
+      console_Debug("ambiant IR temp");
+      console_Debug_Double(IR_Sensor.readAmbientTempC()); 
+      console_Debug("object IR temp");
+      console_Debug_Double(IR_Sensor.readObjectTempC());
     }
 
+ 
 
-    //si manuelle attend un mouvement des GPIO/Blynk
+   
+    //A chaque X wake up 
 
-      //compte le nombre de step a tournee 
+    //update inside temp
 
-      //met a jour blynk
+    //update outside temp
 
-      //retourne a attendre une nouvelle commande
-
-    //si automatique attend un mouvement des Sensor/IA/GPIO/Blynk
-
-      //compte le nombre de step a tournee 
-
-      //met a jour blynk
-
-      //retourne a attendre une nouvelle commande
+    //update sun on the window
   }
   vTaskDelete( NULL );
+}
+
+double Get_Inside_Temp()
+{
+    return analogRead(AnalogTMP);
+
+}
+
+double Get_Sun()
+{
+    return analogRead(AnalogSUN);
+
 }
 
 

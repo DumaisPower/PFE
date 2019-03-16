@@ -26,6 +26,12 @@ void Blynk_Print_Terminal(String StringToPrint);
 
 void console_Debug(String StringToPrint);
 
+void console_Debug_Int(int IntToPrint);
+
+void console_Debug_Double(double DoubleToPrint);
+
 void Go_To_Sleep();
+
+void Blynk_Virtual_Write(int pin, double Value);
 
 #endif // COMZ_H_
