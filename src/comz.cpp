@@ -17,7 +17,7 @@
 #define LED1 5
 #define LED2 10
 WidgetTerminal terminal(V0);
-WidgetLED led(V2);
+
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
@@ -25,8 +25,8 @@ char auth[] = "1334465b93034f92ad14742fb88eb305";
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-char ssid[] = "HONDAGMC";
-char pass[] = "18182321yougi";
+char ssid[] = "iPhone de Dany";
+char pass[] = "12345678";
 
 void Task_Communication(void * parameter);
 
@@ -35,6 +35,13 @@ TaskHandle_t TaskCom;
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 extern SemaphoreHandle_t	SemaphoreSensor;
+
+String tamponJson;
+bool controle = STATE_MANUEL;
+int tempExt;
+int setStore;
+float tempC = 0;
+double niveauBatterie;
 
 void Comz_Init()
 {
@@ -52,6 +59,10 @@ void Comz_Init()
 
     //Connect to wifi
   Blynk.begin(auth, ssid, pass);
+
+  delay(500); 
+
+  Blynk.virtualWrite(V6, "http://api.openweathermap.org/data/2.5/weather?id=6077243&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
 
 
 }
@@ -80,6 +91,22 @@ void Task_Communication(void * parameter)
     {
       console_Debug("test0");
       nextMillis = currentMillis;
+
+      Blynk.virtualWrite(V5, niveauBatterie);
+
+      StaticJsonDocument<2000> doc;
+      DeserializationError error = deserializeJson(doc,tamponJson);     
+      if (error) 
+      {
+        console_Debug("deserializeJson() failed with code ");             
+        console_Debug(error.c_str());
+      }  
+ 
+      String name = doc["name"];                             
+      float tempK = doc["main"]["temp"];                   
+      float tempC = tempK - 273.15;                        
+
+      Blynk.virtualWrite(V2, tempC);
       
     }
     xSemaphoreGive(SemaphoreMotor);
@@ -181,3 +208,37 @@ void Blynk_Virtual_Write(int pin, double Value)
   Blynk.virtualWrite(pin, Value);
 }
 
+BLYNK_WRITE(V6) //WEBHOOK
+{
+  //Serial.println("WebHook data:");
+  tamponJson = param.asStr();
+
+  //Serial.println(param.asStr());
+}
+
+BLYNK_WRITE(V2)//TEMPS EXTERIEUR
+{
+    tempExt = param.asInt();   //pour lire la valeur de la pin V1 et la mettre dans variable pour utiliser pour dany comparaison entre tempin/tempout
+    console_Debug("temp exterieur");
+    console_Debug_Int(tempExt);
+}
+
+BLYNK_WRITE(V3)
+{
+   setStore = param.asInt();  // met la valeur du slider dans la variable setStore
+}
+
+BLYNK_WRITE(V4) // SWITCH MANUEL/AUTO
+{
+  switch (param.asInt())
+  {
+    case 1: { 
+        controle = STATE_MANUEL;
+        break;
+      }
+    case 2: { 
+        controle = STATE_AUTO;
+        break;
+      }
+    }
+}

@@ -9,8 +9,12 @@
 #include "esp_bt_main.h"
 #include "esp_wifi.h"
 #include "esp_sleep.h"
+#include <ArduinoJson.h> 
 
 #define BLYNK_PRINT Serial
+
+#define STATE_MANUEL 0
+#define STATE_AUTO 1
 
 void Comz_Init();
 

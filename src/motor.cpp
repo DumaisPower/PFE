@@ -72,13 +72,12 @@ void Task_Moteur(void * parameter)
     if (currentMillis  > nextMillis + 7000)
     {
       console_Debug("test1");
-      stepper.enable();
+      //stepper.enable();
       stepper.rotate(360);
-      stepper.disable();
+      //stepper.disable();
       nextMillis = currentMillis;
     }
-
-
+    stepper.rotate(360);
     //si manuelle attend un mouvement des GPIO/Blynk
 
       //compte le nombre de step a tournee 

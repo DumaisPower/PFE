@@ -5,11 +5,11 @@
 #include "comz.h"
 
 // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
-#define MOTOR_STEPS 400
+#define MOTOR_STEPS 1600
 #define MICROSTEPS 1
 
 // Target RPM for cruise speed
-#define RPM 60
+#define RPM 75
 
 #define DIR 22
 #define STEP 21

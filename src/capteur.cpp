@@ -117,4 +117,25 @@ double Get_Sun()
 
 }
 
+int Get_Niv_Bat()
+{
+  switch(niveauBatterie)
+  {
+    case niveauBatterie >= 3.9
+    {
+
+    }
+    case niveauBatterie < 3.9 AND niveauBatterie > 3.6
+    {
+
+    }
+    case niveauBatterie <= 3.6
+    {
+
+    }
+    
+  }
+
+}
+
 
