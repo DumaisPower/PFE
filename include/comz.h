@@ -16,6 +16,13 @@
 #define STATE_MANUEL 0
 #define STATE_AUTO 1
 
+#define TEMP_INT 1
+#define TEMP_EXT V2
+#define NIV_STORE_MAN V3
+#define AUTO_MAN V4
+#define NIV_BAT 5
+#define WEBHOOK V6
+
 void Comz_Init();
 
 void console_Err(esp_err_t err, String StringToPrint);

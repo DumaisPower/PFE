@@ -13,11 +13,7 @@
 
 #include <BlynkSimpleEsp32.h>
 
-//define widget
-#define LED1 5
-#define LED2 10
 WidgetTerminal terminal(V0);
-
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
@@ -36,13 +32,17 @@ extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 extern SemaphoreHandle_t	SemaphoreSensor;
 
+/****************Variable**************************/
 String tamponJson;
 bool controle = STATE_MANUEL;
-int tempExt;
 int setStore;
 float tempC = 0;
 double niveauBatterie;
-float niveauBatteriePourcent;
+int niveauBatteriePourcent;
+float temp_ext_K;                 
+float temp_ext_C;
+
+
 void Comz_Init()
 {
 
@@ -92,22 +92,6 @@ void Task_Communication(void * parameter)
       console_Debug("test0");
       nextMillis = currentMillis;
 
-      Blynk.virtualWrite(V5, niveauBatterie);
-
-      StaticJsonDocument<2000> doc;
-      DeserializationError error = deserializeJson(doc,tamponJson);     
-      if (error) 
-      {
-        console_Debug("deserializeJson() failed with code ");             
-        console_Debug(error.c_str());
-      }  
- 
-      String name = doc["name"];                             
-      float tempK = doc["main"]["temp"];                   
-      float tempC = tempK - 273.15;                        
-
-      Blynk.virtualWrite(V2, tempC);
-      
     }
     xSemaphoreGive(SemaphoreMotor);
 
@@ -124,7 +108,7 @@ void Task_Communication(void * parameter)
 
 void Go_To_Sleep()
 {
-  //consoleDebug("Entering sleep mode");
+  console_Debug("Entering sleep mode");
 
   //stop wifi connection
   esp_wifi_stop();
@@ -136,7 +120,7 @@ void Go_To_Sleep()
   esp_wifi_start();
 
   //connect to blynk
-  //Blynk.begin(auth, ssid, pass);
+  Blynk.begin(auth, ssid, pass);
 
   console_Debug("just woke up");
 }
@@ -208,27 +192,17 @@ void Blynk_Virtual_Write(int pin, double Value)
   Blynk.virtualWrite(pin, Value);
 }
 
-BLYNK_WRITE(V6) //WEBHOOK
+BLYNK_WRITE(WEBHOOK) //WEBHOOK
 {
-  //Serial.println("WebHook data:");
   tamponJson = param.asStr();
-
-  //Serial.println(param.asStr());
 }
 
-BLYNK_WRITE(V2)//TEMPS EXTERIEUR
-{
-    tempExt = param.asInt();   //pour lire la valeur de la pin V1 et la mettre dans variable pour utiliser pour dany comparaison entre tempin/tempout
-    console_Debug("temp exterieur");
-    console_Debug_Int(tempExt);
-}
-
-BLYNK_WRITE(V3)
+BLYNK_WRITE(NIV_STORE_MAN)
 {
    setStore = param.asInt();  // met la valeur du slider dans la variable setStore
 }
 
-BLYNK_WRITE(V4) // SWITCH MANUEL/AUTO
+BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
 {
   switch (param.asInt())
   {
@@ -241,4 +215,25 @@ BLYNK_WRITE(V4) // SWITCH MANUEL/AUTO
         break;
       }
     }
+}
+
+float get_temp_ext()
+{
+
+  StaticJsonDocument<2000> doc;
+  DeserializationError error = deserializeJson(doc,tamponJson);     
+  if (error) 
+  {
+    console_Debug("deserializeJson() failed with code ");             
+    console_Debug(error.c_str());
+  }  
+ 
+    String name = doc["name"];                             
+    temp_ext_K = doc["main"]["temp"];                   
+    temp_ext_C = temp_ext_K - 273.15;                        
+
+    Blynk.virtualWrite(TEMP_EXT, temp_ext_C);
+
+    return temp_ext_C;
+
 }

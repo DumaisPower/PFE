@@ -6,7 +6,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include <Wire.h>
 #include "Adafruit_MLX90614.h"
 
 #define SDA1 23
@@ -16,8 +15,9 @@
 #define AnalogSUN 35
 
 void Sensor_Init();
-void scan();
-double  Get_Inside_Temp();
+double  Get_Inside_Temp_Analog();
+double  Get_Inside_Temp_IR();
+double Get_Object_Temp_IR();
 double Get_Sun();
 int Get_Niv_Bat_Poucent();
 #endif // SENSOR_H_

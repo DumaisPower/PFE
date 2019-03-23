@@ -23,7 +23,9 @@ extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreSensor;
 
 /******************Variable**********************/
-double insideTemp;
+double insideTempAnalog;
+double insideTempIR;
+double ObjectTempIR;
 double SunLevel;
 extern double niveauBatterie;
 extern float niveauBatteriePourcent;
@@ -77,20 +79,13 @@ void Task_Sensor(void * parameter)
     {
       console_Debug("test2");
       nextMillis = currentMillis;
-      insideTemp = Get_Inside_Temp();
-      insideTemp = ((insideTemp*(3300.00/1024.00) - 150) / 100.000);
-      console_Debug("ambiant Analog temp");
-      console_Debug_Double(insideTemp);
-      Blynk_Virtual_Write(1, insideTemp);
 
-      SunLevel = Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
-      console_Debug("Sun Level");
-      console_Debug_Double(SunLevel);
+      Get_Inside_Temp_Analog();
 
-      console_Debug("ambiant IR temp");
-      console_Debug_Double(IR_Sensor.readAmbientTempC()); 
-      console_Debug("object IR temp");
-      console_Debug_Double(IR_Sensor.readObjectTempC());
+      Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
+      
+
+
     }
 
  
@@ -107,34 +102,61 @@ void Task_Sensor(void * parameter)
   vTaskDelete( NULL );
 }
 
-double Get_Inside_Temp()
+double Get_Inside_Temp_Analog()
 {
-    return analogRead(AnalogTMP);
+  analogRead(AnalogTMP);
+  insideTempAnalog = ((AnalogTMP*(3300.00/1024.00) - 150) / 100.000);
+  console_Debug("ambiant Analog temp");
+  console_Debug_Double(insideTempAnalog);
+  Blynk_Virtual_Write(TEMP_INT, insideTempAnalog);
+  return insideTempAnalog;
 
+}
+
+double  Get_Inside_Temp_IR()
+{
+  insideTempIR = IR_Sensor.readAmbientTempC();
+  console_Debug("ambiant IR temp");
+  console_Debug_Double(insideTempIR); 
+  return insideTempIR;
+}
+
+double Get_Object_Temp_IR()
+{
+  ObjectTempIR = IR_Sensor.readObjectTempC();
+  console_Debug("object IR temp");
+  console_Debug_Double(ObjectTempIR);
+  return ObjectTempIR;
 }
 
 double Get_Sun()
 {
-    return analogRead(AnalogSUN);
+  SunLevel = analogRead(AnalogSUN);
+  console_Debug("Sun Level");
+  console_Debug_Double(SunLevel);
 
+  return SunLevel;
 }
 
 int Get_Niv_Bat_Poucent()
 {
   
-    if(niveauBatterie >= 3.9)
-    {
-      niveauBatteriePourcent = 41.6667*niveauBatterie-75;
-    }
-    else if((niveauBatterie < 3.9) && (niveauBatterie > 3.6))
-    {
-        niveauBatteriePourcent = 250*niveauBatterie-887.5;
-    }
-    else            //niveauBatterie <= 3.6
-    {
-        niveauBatteriePourcent = 16.129*niveauBatterie-45.5645;
-    }
-    return niveauBatteriePourcent;
+  if(niveauBatterie >= 3.9)
+  {
+    niveauBatteriePourcent = 41.6667*niveauBatterie-75;
+  }
+  else if((niveauBatterie < 3.9) && (niveauBatterie > 3.6))
+  {
+    niveauBatteriePourcent = 250*niveauBatterie-887.5;
+  }
+  else            //niveauBatterie <= 3.6
+  {
+    niveauBatteriePourcent = 16.129*niveauBatterie-45.5645;
+  }
+
+  Blynk_Virtual_Write(NIV_BAT, niveauBatteriePourcent);
+
+  return niveauBatteriePourcent;
 }
 
 
