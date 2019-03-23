@@ -25,6 +25,8 @@ extern SemaphoreHandle_t	SemaphoreSensor;
 /******************Variable**********************/
 double insideTemp;
 double SunLevel;
+extern double niveauBatterie;
+extern float niveauBatteriePourcent;
 
 void Sensor_Init()
 {
@@ -117,25 +119,22 @@ double Get_Sun()
 
 }
 
-int Get_Niv_Bat()
+int Get_Niv_Bat_Poucent()
 {
-  switch(niveauBatterie)
-  {
-    case niveauBatterie >= 3.9
+  
+    if(niveauBatterie >= 3.9)
     {
-
+      niveauBatteriePourcent = 41.6667*niveauBatterie-75;
     }
-    case niveauBatterie < 3.9 AND niveauBatterie > 3.6
+    else if((niveauBatterie < 3.9) && (niveauBatterie > 3.6))
     {
-
+        niveauBatteriePourcent = 250*niveauBatterie-887.5;
     }
-    case niveauBatterie <= 3.6
+    else            //niveauBatterie <= 3.6
     {
-
+        niveauBatteriePourcent = 16.129*niveauBatterie-45.5645;
     }
-    
-  }
-
+    return niveauBatteriePourcent;
 }
 
 

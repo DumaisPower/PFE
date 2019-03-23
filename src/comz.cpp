@@ -42,7 +42,7 @@ int tempExt;
 int setStore;
 float tempC = 0;
 double niveauBatterie;
-
+float niveauBatteriePourcent;
 void Comz_Init()
 {
 

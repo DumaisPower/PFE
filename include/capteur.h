@@ -19,6 +19,5 @@ void Sensor_Init();
 void scan();
 double  Get_Inside_Temp();
 double Get_Sun();
-int Get_Niv_Bat();
-
+int Get_Niv_Bat_Poucent();
 #endif // SENSOR_H_
