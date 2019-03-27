@@ -14,13 +14,18 @@
 
 DRV8834 stepper(MOTOR_STEPS, DIR, STEP, SLEEP/*, M0, M1*/);
 
-void Task_Moteur(void * parameter);
+
 TaskHandle_t TaskMot;
 
 extern SemaphoreHandle_t	BarrierMotor;
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 
+unsigned long currentMillis;
+unsigned long nextMillis = 0;
+
+double MotorPosition;
+float LowCurrent;
 
 void Motor_Init()
 {
@@ -34,24 +39,52 @@ void Motor_Init()
                     1);                         /* Core id. */
     
     delay(500); 
-
+ 
 }
 
+void Motor_Setup()
+{
+  stepper.begin(RPM, MICROSTEPS);
+    // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
+    // stepper.setEnableActiveState(LOW);
+  stepper.enable();
+
+  Position_Init();
+}
+
+void Position_Init()
+{
+  stepper.move(1600);
+
+  LowCurrent = Get_Current();
+
+  while(Get_Current() < LowCurrent + DELTA_CURENT_MAX)
+  {
+    stepper.move(-1600);
+    delay(500);
+    if(Timer_Motor(7000))
+    {
+      Blynk_Run();
+    }
+  }
+  stepper.move(MOTOR_POS_OFFSET);
+
+  MotorPosition = 0;
+}
+
+float Get_Current()
+{
+  //read current on the current sensor
+
+  return LowCurrent;
+}
 
 void Task_Moteur(void * parameter)
 {
   //setup for motor
   //terminal.println("Task Motor Start");
  
-  unsigned long currentMillis;
-  unsigned long nextMillis = 0;
-
-  stepper.begin(RPM, MICROSTEPS);
-    // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-    // stepper.setEnableActiveState(LOW);
-  stepper.enable();
-
-  stepper.startRotate(360);
+  Motor_Setup();
 
   /* The parameter value is expected to be 1 as 1 is passed in the
   pvParameters value in the call to xTaskCreate() below.*/ 
@@ -95,6 +128,17 @@ void Task_Moteur(void * parameter)
       //retourne a attendre une nouvelle commande
   }
   vTaskDelete( NULL );
+}
+
+bool Timer_Motor(int MiliSeconde)
+{
+    currentMillis = millis();
+    if (currentMillis  > nextMillis + MiliSeconde)
+    {     
+      nextMillis = currentMillis;
+      return 1;
+    }
+    return 0;
 }
 
 
