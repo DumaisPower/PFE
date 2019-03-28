@@ -50,49 +50,35 @@ void Sensor_Init()
 
 }
 
-void Task_Sensor(void * parameter)
+void Sensor_Setup()
 {
-
-  //terminal.println("Task Sensor Start");
- 
   pinMode(AnalogTMP,INPUT);
   pinMode(AnalogSUN,INPUT);
-  //setup for sensor
-  unsigned long currentMillis ;
-  unsigned long nextMillis = 0;  
-  //run task sensor
 
-  /* The parameter value is expected to be 1 as 1 is passed in the
-  pvParameters value in the call to xTaskCreate() below.*/ 
- //configASSERT( ( ( uint32_t ) parameter ) == 1 );
+  return;
+}
+
+void Task_Sensor(void * parameter)
+{
+  console_Debug("Task Sensor Start");
+  
+  Sensor_Setup();
 
   xSemaphoreGive(BarrierMotor);
   
-  while(1)
+  //run task sensor
+  while(true)
   {
 
     //wating for a command
     xSemaphoreTake(SemaphoreSensor, portMAX_DELAY);
 
-    currentMillis = millis();
-    if (currentMillis  > nextMillis + 7000)
-    {
-      console_Debug("test2");
-      nextMillis = currentMillis;
+    console_Debug("test2");
 
-      Get_Inside_Temp_Analog();
+    Get_Inside_Temp_Analog();
 
-      Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
+    Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
       
-
-
-    }
-
- 
-
-   
-    //A chaque X wake up 
-
     //update inside temp
 
     //update outside temp

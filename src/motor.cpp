@@ -11,9 +11,7 @@
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "motor.h"
 
-
 DRV8834 stepper(MOTOR_STEPS, DIR, STEP, SLEEP/*, M0, M1*/);
-
 
 TaskHandle_t TaskMot;
 
@@ -21,11 +19,13 @@ extern SemaphoreHandle_t	BarrierMotor;
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 
-unsigned long currentMillis;
-unsigned long nextMillis = 0;
+unsigned long currentMillisMotor;
+unsigned long nextMillisMotor = 0;
 
-double MotorPosition;
+double MotorPositionTmp;
+double PositionDesireTmp;
 float LowCurrent;
+
 
 void Motor_Init()
 {
@@ -69,7 +69,11 @@ void Position_Init()
   }
   stepper.move(MOTOR_POS_OFFSET);
 
-  MotorPosition = 0;
+  MotorPositionTmp = 0;
+
+  Set_Motor_Pos(MotorPositionTmp);
+
+  return;
 }
 
 float Get_Current()
@@ -81,36 +85,39 @@ float Get_Current()
 
 void Task_Moteur(void * parameter)
 {
-  //setup for motor
-  //terminal.println("Task Motor Start");
- 
+  
+  console_Debug("Task Motor Start");
+  
   Motor_Setup();
-
-  /* The parameter value is expected to be 1 as 1 is passed in the
-  pvParameters value in the call to xTaskCreate() below.*/ 
- //configASSERT( ( ( uint32_t ) parameter ) == 1 );
 
   xSemaphoreTake(BarrierMotor, portMAX_DELAY);
   xSemaphoreGive(BarrierComz);
+
   //run task motor
-  while(1)
+  while(true)
   {
 
     //wating for a command
     xSemaphoreTake(SemaphoreMotor, portMAX_DELAY);
 
-    //stepperMotor();
+    PositionDesireTmp = Get_Position_Desire();
 
-    currentMillis = millis();
-    if (currentMillis  > nextMillis + 7000)
+    while(MotorPositionTmp != PositionDesireTmp)
     {
       console_Debug("test1");
-      //stepper.enable();
+      stepper.enable();
       stepper.rotate(360);
-      //stepper.disable();
-      nextMillis = currentMillis;
+      stepper.disable();
+
+      if(Timer_Motor(7000))
+      {
+        Blynk_Run();
+      } 
     }
-    stepper.rotate(360);
+    Set_Motor_Pos(PositionDesireTmp);
+
+    
+
     //si manuelle attend un mouvement des GPIO/Blynk
 
       //compte le nombre de step a tournee 
@@ -132,13 +139,13 @@ void Task_Moteur(void * parameter)
 
 bool Timer_Motor(int MiliSeconde)
 {
-    currentMillis = millis();
-    if (currentMillis  > nextMillis + MiliSeconde)
+    currentMillisMotor = millis();
+    if (currentMillisMotor  > nextMillisMotor + MiliSeconde)
     {     
-      nextMillis = currentMillis;
-      return 1;
+      nextMillisMotor = currentMillisMotor;
+      return true;
     }
-    return 0;
+    return false;
 }
 
 

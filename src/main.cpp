@@ -65,17 +65,8 @@ void Config_Init()
   //clear terminal
   Blynk_Clear_Terminal();
 
-  // This will print Blynk Software version to the Terminal Widget when
-  // your hardware gets connected to Blynk Server
   Blynk_Print_Terminal("Blynk : Device started");
   Blynk_Print_Terminal("-------------");
-  
-  /* If we use other app than blynk it might be useful*/
-  // consoleErr(esp_wifi_init(&config), "esp_wifi_init : ");
-  // delay(300); 
-  // consoleErr(esp_wifi_start(), "esp_wifi_start : ");
-  // delay(300); 
-  // consoleErr(esp_wifi_set_auto_connect(1), "esp_wifi_set_auto_connect : ");
   
   //enable wakup sourcce
   console_Err(esp_sleep_enable_timer_wakeup(8000000), "esp_sleep_enable_timer_wakeup : ");

@@ -10,6 +10,7 @@
 #include "esp_wifi.h"
 #include "esp_sleep.h"
 #include <ArduinoJson.h> 
+#include <stdbool.h>
 
 #define BLYNK_PRINT Serial
 
@@ -22,6 +23,8 @@
 #define AUTO_MAN V4
 #define NIV_BAT 5
 #define WEBHOOK V6
+
+#define SENSOR_REFRESH_MILISEC 900000 //900000 = 15 min
 
 void Comz_Init();
 
@@ -44,5 +47,22 @@ void console_Debug_Double(double DoubleToPrint);
 void Go_To_Sleep();
 
 void Blynk_Virtual_Write(int pin, double Value);
+
+bool Timer_Sensor(int MiliSeconde);
+
+void Set_Motor_Change();
+
+void Reset_Motor_Change();
+
+void Set_Position_Desire(int Pourcentage);
+
+double Get_Position_Desire();
+
+void Set_Motor_Pos(double NewPosition);
+
+double Get_Motor_Pos();
+
+void Comz_Setup();
+
 
 #endif // COMZ_H_

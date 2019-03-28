@@ -41,6 +41,12 @@ double niveauBatterie;
 int niveauBatteriePourcent;
 float temp_ext_K;                 
 float temp_ext_C;
+bool MotorChange;
+double PositionDesire;
+double MotorPosition;
+
+unsigned long currentMillisSensor;
+unsigned long nextMillisSensor = 0; 
 
 
 void Comz_Init()
@@ -57,49 +63,48 @@ void Comz_Init()
 
   delay(500); 
 
-    //Connect to wifi
+  //Connect to wifi
   Blynk.begin(auth, ssid, pass);
 
   delay(500); 
 
+}
+
+void Comz_Setup()
+{
   Blynk.virtualWrite(V6, "http://api.openweathermap.org/data/2.5/weather?id=6077243&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
 
-
+  return;
 }
 
 void Task_Communication(void * parameter)
 {
   //setup for comz
-  //terminal.println("Task Comz Start");
+  console_Debug("Task Comz Start");
+ 
+  Comz_Setup();
 
-  unsigned long currentMillis;
-  unsigned long nextMillis = 0;  
-  String err;
-
-  /* The parameter value is expected to be 1 as 1 is passed in the
-  pvParameters value in the call to xTaskCreate() below.*/ 
-  //configASSERT( ( ( uint32_t ) parameter ) == 1 );
-
- //waiting every task to be setup
+  //waiting every task to be setup
   xSemaphoreTake(BarrierComz, portMAX_DELAY);
 
  //run task comz
-  while(1)
+  while(true)
   {
-    currentMillis = millis();
-    if (currentMillis  > nextMillis + 7000)
-    {
-      console_Debug("test0");
-      nextMillis = currentMillis;
-
-    }
-    xSemaphoreGive(SemaphoreMotor);
-
-    xSemaphoreGive(SemaphoreSensor);
     //give ping to blynk and get value if change
+    Blynk_Run();
 
-    // //if no new value shut down wifi
-    //GoToSleep();
+    if(Timer_Sensor(SENSOR_REFRESH_MILISEC))
+    {
+      xSemaphoreGive(SemaphoreSensor);//do sensor task
+    }  
+    
+    if(MotorChange)
+    {
+      xSemaphoreGive(SemaphoreMotor);//do motor taksk
+    }
+    
+    //while no change go to sleep
+    Go_To_Sleep();
 
   }
   vTaskDelete( NULL );
@@ -159,8 +164,6 @@ void console_Debug(String StringToPrint)
 {
   terminal.println(StringToPrint);
   Blynk.run();
-  delay(200);
-  terminal.flush();
   
   return;
 }
@@ -169,22 +172,16 @@ void console_Debug_Int(int IntToPrint)
 {
   terminal.println(IntToPrint);
   Blynk.run();
-  delay(200);
-  terminal.flush();
-  
+ 
   return;
-
 }
 
 void console_Debug_Double(double DoubleToPrint)
 {
   terminal.println(DoubleToPrint);
   Blynk.run();
-  delay(200);
-  terminal.flush();
-  
-  return;
 
+  return;
 }
 
 void Blynk_Virtual_Write(int pin, double Value)
@@ -208,13 +205,16 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
   {
     case 1: { 
         controle = STATE_MANUEL;
+        Set_Motor_Change();
         break;
       }
     case 2: { 
         controle = STATE_AUTO;
+        Set_Motor_Change();
         break;
       }
     }
+    return;
 }
 
 float get_temp_ext()
@@ -235,5 +235,52 @@ float get_temp_ext()
     Blynk.virtualWrite(TEMP_EXT, temp_ext_C);
 
     return temp_ext_C;
+}
 
+bool Timer_Sensor(int MiliSeconde)
+{
+    currentMillisSensor = millis();
+    if (currentMillisSensor  > nextMillisSensor + MiliSeconde)
+    {     
+      nextMillisSensor = currentMillisSensor;
+      return true;
+    }
+    return false;
+}
+
+void Set_Motor_Change()
+{
+  MotorChange = true;
+  return;
+}
+
+void Reset_Motor_Change()
+{
+  MotorChange = false;
+  return;
+}
+
+void Set_Position_Desire(int Pourcentage)
+{
+
+  //formule qui calcul le nombre de step du moteur
+  return ;
+}
+
+double Get_Position_Desire()
+{
+  return PositionDesire;
+}
+
+void Set_Motor_Pos(double NewPosition)
+{
+
+  MotorPosition = NewPosition;
+  //formule qui calcul le nombre de step du moteur
+  return ;
+}
+
+double Get_Motor_Pos()
+{
+  return MotorPosition;
 }

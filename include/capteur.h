@@ -20,4 +20,5 @@ double  Get_Inside_Temp_IR();
 double Get_Object_Temp_IR();
 double Get_Sun();
 int Get_Niv_Bat_Poucent();
+void Sensor_Setup();
 #endif // SENSOR_H_
