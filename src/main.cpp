@@ -38,7 +38,7 @@ SemaphoreHandle_t BarrierMotor = xSemaphoreCreateCounting( 1, 0 );
 
 
 wifi_init_config_t config ;
- BluetoothSerial ESP_BT;
+BluetoothSerial ESP_BT;
 
 void setup()
 {

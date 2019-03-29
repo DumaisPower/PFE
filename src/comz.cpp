@@ -10,40 +10,50 @@
 ⋆ 
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "comz.h"
-
 #include <BlynkSimpleEsp32.h>
 
-WidgetTerminal terminal(V0);
-
-// You should get Auth Token in the Blynk App.
-// Go to the Project Settings (nut icon).
+/*******************Your WiFi credentials******************/
+char ssid[] = "HONDAGMC";
+char pass[] = "18182321yougi";
 char auth[] = "1334465b93034f92ad14742fb88eb305";
 
-// Your WiFi credentials.
-// Set password to "" for open networks.
-char ssid[] = "iPhone de Dany";
-char pass[] = "12345678";
+/********************Widget*****************************/
+WidgetTerminal terminal(TERMINAL);
 
-void Task_Communication(void * parameter);
-
-TaskHandle_t TaskCom;
-
+/*****************Semaphore and barier*****************/
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 extern SemaphoreHandle_t	SemaphoreSensor;
 
+TaskHandle_t TaskCom;
+
 /****************Variable**************************/
-String tamponJson;
+//Controle Blynk
 bool controle = STATE_MANUEL;
 int setStore;
-float tempC = 0;
+int HauteurFenetre;
+
+//baterie
 double niveauBatterie;
 int niveauBatteriePourcent;
-float temp_ext_K;                 
-float temp_ext_C;
+
+//jason
+String tamponJson;
+double TempExtK;                 
+double TempExtC;
+
+//motor
 bool MotorChange;
 double PositionDesire;
 double MotorPosition;
+double MotorPositionPercentage;
+double MaxPosition;
+
+//capteur
+double insideTempAnalog;
+double insideTempIR;
+double ObjectTempIR;
+double SunLevel;
 
 unsigned long currentMillisSensor;
 unsigned long nextMillisSensor = 0; 
@@ -72,7 +82,9 @@ void Comz_Init()
 
 void Comz_Setup()
 {
-  Blynk.virtualWrite(V6, "http://api.openweathermap.org/data/2.5/weather?id=6077243&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
+  Blynk.virtualWrite(WEBHOOK, "http://api.openweathermap.org/data/2.5/weather?id=6077243&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
+
+  Set_Max_Position();
 
   return;
 }
@@ -96,11 +108,19 @@ void Task_Communication(void * parameter)
     if(Timer_Sensor(SENSOR_REFRESH_MILISEC))
     {
       xSemaphoreGive(SemaphoreSensor);//do sensor task
+
+      //xSemaphoreGive(SemaphoreIA);//do IA task                  not yet implement
+
+      Update_Blynk_Sensor();
     }  
     
     if(MotorChange)
     {
       xSemaphoreGive(SemaphoreMotor);//do motor taksk
+
+      MotorPositionPercentage = Step_To_Percentage(MotorPosition);
+
+      Update_Blynk_Motor_Pos();
     }
     
     //while no change go to sleep
@@ -109,6 +129,41 @@ void Task_Communication(void * parameter)
   }
   vTaskDelete( NULL );
 
+}
+
+void Update_Blynk_Sensor()
+{
+  Blynk_Virtual_Write(TEMP_INT, insideTempIR);
+
+  Blynk_Virtual_Write(TEMP_EXT, TempExtC);
+
+  Blynk_Virtual_Write(NIV_SUN, SunLevel);
+
+  return;
+}
+
+void Update_Blynk_Motor_Pos()
+{
+  Blynk_Virtual_Write(NIV_STORE_MAN, MotorPositionPercentage);
+
+  return;
+}
+
+double Step_To_Percentage(double step)
+{
+  return (step / MaxPosition) * 100;
+}
+
+double Percentage_To_Step(double percentage)
+{
+  return (percentage / 100) * MaxPosition;
+}
+
+void Set_Max_Position()
+{
+  //formule qui convertie le nombre de metre en step
+  MaxPosition = 10000 ; 
+  return;
 }
 
 void Go_To_Sleep()
@@ -143,60 +198,67 @@ void console_Err(esp_err_t  err, String StringToPrint)
 void Blynk_Run()
 {
   Blynk.run();
+  return;
 }
 
 void Blynk_Clear_Terminal()
 {
   terminal.clear();
+  return;
 }
 
 void Blynk_Print_Terminal(String StringToPrint)
 {
   terminal.println(StringToPrint);
+  return;
 }
 
 void Blynk_Flush_Terminal()
 {
   terminal.flush();
+  return;
 }
 
 void console_Debug(String StringToPrint)
 {
-  terminal.println(StringToPrint);
-  Blynk.run();
-  
+  terminal.println(StringToPrint); 
   return;
 }
 
 void console_Debug_Int(int IntToPrint)
 {
   terminal.println(IntToPrint);
-  Blynk.run();
- 
   return;
 }
 
 void console_Debug_Double(double DoubleToPrint)
 {
   terminal.println(DoubleToPrint);
-  Blynk.run();
-
   return;
 }
 
 void Blynk_Virtual_Write(int pin, double Value)
 {
   Blynk.virtualWrite(pin, Value);
+  return;
 }
 
 BLYNK_WRITE(WEBHOOK) //WEBHOOK
 {
   tamponJson = param.asStr();
+  return;
+}
+
+BLYNK_WRITE(HAUTEUR_FENETRE) //WEBHOOK
+{
+  HauteurFenetre = param.asInt();
+  return;
 }
 
 BLYNK_WRITE(NIV_STORE_MAN)
 {
-   setStore = param.asInt();  // met la valeur du slider dans la variable setStore
+  setStore = param.asInt();  // met la valeur du slider dans la variable setStore
+  return;
 }
 
 BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
@@ -217,7 +279,7 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
     return;
 }
 
-float get_temp_ext()
+void Set_Outside_Temp()
 {
 
   StaticJsonDocument<2000> doc;
@@ -229,12 +291,17 @@ float get_temp_ext()
   }  
  
     String name = doc["name"];                             
-    temp_ext_K = doc["main"]["temp"];                   
-    temp_ext_C = temp_ext_K - 273.15;                        
+    TempExtK = doc["main"]["temp"];                   
+    TempExtC = TempExtK - 273.15;                        
 
-    Blynk.virtualWrite(TEMP_EXT, temp_ext_C);
+    Blynk.virtualWrite(TEMP_EXT, TempExtC);
 
-    return temp_ext_C;
+    return;
+}
+
+double Get_Outside_Temp()
+{
+  return TempExtC;
 }
 
 bool Timer_Sensor(int MiliSeconde)
@@ -283,4 +350,48 @@ void Set_Motor_Pos(double NewPosition)
 double Get_Motor_Pos()
 {
   return MotorPosition;
+}
+
+double Get_Inside_Temp_Analog()
+{
+  return insideTempAnalog;
+}
+
+void Set_Inside_Temp_Analog(double NewTempAnalog)
+{
+  insideTempAnalog = NewTempAnalog;
+  return ;
+}
+
+double  Get_Inside_Temp_IR()
+{
+  return insideTempIR;
+}
+
+void  Set_Inside_Temp_IR(double NewTempIR)
+{
+  insideTempIR = NewTempIR;
+  return ;
+}
+
+void Set_Object_Temp_IR(double NewObjectIR)
+{
+  ObjectTempIR = NewObjectIR;
+  return ;
+}
+
+double Get_Object_Temp_IR()
+{
+  return ObjectTempIR;
+}
+
+void Set_Sun(double NewSunLevel)
+{
+  SunLevel = NewSunLevel;
+  return ;
+}
+
+double Get_Sun()
+{
+  return SunLevel;
 }

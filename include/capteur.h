@@ -1,6 +1,7 @@
 #ifndef SENSOR_H_ /* Include guard */
 #define SENSOR_H_
 
+/***************************Library***************/
 #include "comz.h"
 #include "Arduino.h"
 #include "freertos/FreeRTOS.h"
@@ -15,10 +16,10 @@
 #define AnalogSUN 35
 
 void Sensor_Init();
-double  Get_Inside_Temp_Analog();
-double  Get_Inside_Temp_IR();
-double Get_Object_Temp_IR();
-double Get_Sun();
+void  Update_Inside_Temp_Analog();
+void  Update_Inside_Temp_IR();
+void Update_Object_Temp_IR();
+void Update_Sun();
 int Get_Niv_Bat_Poucent();
 void Sensor_Setup();
 #endif // SENSOR_H_

@@ -23,10 +23,10 @@ extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreSensor;
 
 /******************Variable**********************/
-double insideTempAnalog;
-double insideTempIR;
-double ObjectTempIR;
-double SunLevel;
+double insideTempAnalogTmp;
+double insideTempIRTmp;
+double ObjectTempIRTmp;
+double SunLevelTmp;
 extern double niveauBatterie;
 extern float niveauBatteriePourcent;
 
@@ -75,53 +75,63 @@ void Task_Sensor(void * parameter)
 
     console_Debug("test2");
 
-    Get_Inside_Temp_Analog();
+    //update the sensor value
+    Update_Inside_Temp_Analog();
 
-    Get_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
+    Update_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
       
-    //update inside temp
+    Update_Inside_Temp_IR();
 
-    //update outside temp
+    Update_Object_Temp_IR();
 
-    //update sun on the window
+    //set the sensor value 
+    Set_Inside_Temp_Analog(insideTempAnalogTmp);
+
+    Set_Sun(SunLevelTmp); //~1000 = noir total , ~2000= normal , ~3000= soleil
+      
+    Set_Inside_Temp_IR(insideTempIRTmp);
+
+    Set_Object_Temp_IR(ObjectTempIRTmp);
+
   }
   vTaskDelete( NULL );
 }
 
-double Get_Inside_Temp_Analog()
+void Update_Inside_Temp_Analog()
 {
-  analogRead(AnalogTMP);
-  insideTempAnalog = ((AnalogTMP*(3300.00/1024.00) - 150) / 100.000);
+  uint16_t Tempon;
+  Tempon = analogRead(AnalogTMP);
+  insideTempAnalogTmp = ((Tempon*(3300.00/1024.00) - 500) / 100.000);
   console_Debug("ambiant Analog temp");
-  console_Debug_Double(insideTempAnalog);
-  Blynk_Virtual_Write(TEMP_INT, insideTempAnalog);
-  return insideTempAnalog;
+  console_Debug_Double(insideTempAnalogTmp);
+  Blynk_Virtual_Write(TEMP_INT, insideTempAnalogTmp);
+  return ;
 
 }
 
-double  Get_Inside_Temp_IR()
+void  Update_Inside_Temp_IR()
 {
-  insideTempIR = IR_Sensor.readAmbientTempC();
+  insideTempIRTmp = IR_Sensor.readAmbientTempC();
   console_Debug("ambiant IR temp");
-  console_Debug_Double(insideTempIR); 
-  return insideTempIR;
+  console_Debug_Double(insideTempIRTmp); 
+  return ;
 }
 
-double Get_Object_Temp_IR()
+void Update_Object_Temp_IR()
 {
-  ObjectTempIR = IR_Sensor.readObjectTempC();
+  ObjectTempIRTmp = IR_Sensor.readObjectTempC();
   console_Debug("object IR temp");
-  console_Debug_Double(ObjectTempIR);
-  return ObjectTempIR;
+  console_Debug_Double(ObjectTempIRTmp);
+  return ;
 }
 
-double Get_Sun()
+void Update_Sun()
 {
-  SunLevel = analogRead(AnalogSUN);
+  SunLevelTmp = analogRead(AnalogSUN);
   console_Debug("Sun Level");
-  console_Debug_Double(SunLevel);
+  console_Debug_Double(SunLevelTmp);
 
-  return SunLevel;
+  return ;
 }
 
 int Get_Niv_Bat_Poucent()
