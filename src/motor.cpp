@@ -38,22 +38,25 @@ void Motor_Init()
                     NULL,                       /* task handler. */     
                     1);                         /* Core id. */
     
-    delay(500); 
- 
+  delay(500); 
+  return;
 }
 
 void Motor_Setup()
 {
-  stepper.begin(RPM, MICROSTEPS);
-    // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-    // stepper.setEnableActiveState(LOW);
-  stepper.enable();
+  stepper.begin(RPM);
+  // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
+  // stepper.setEnableActiveState(LOW);
+  digitalWrite(SLEEP, LOW);
 
-  Position_Init();
+  // Position_Init();
+  return;
 }
 
 void Position_Init()
 {
+  digitalWrite(SLEEP, HIGH);
+
   stepper.move(1600);
 
   LowCurrent = Get_Current();
@@ -67,6 +70,8 @@ void Position_Init()
       Blynk_Run();
     }
   }
+  digitalWrite(SLEEP, LOW);
+  
   stepper.move(MOTOR_POS_OFFSET);
 
   MotorPositionTmp = 0;
@@ -100,23 +105,28 @@ void Task_Moteur(void * parameter)
     //wating for a command
     xSemaphoreTake(SemaphoreMotor, portMAX_DELAY);
 
-    PositionDesireTmp = Get_Position_Desire();
+    console_Debug("Doing Motor Task");
 
-    while(MotorPositionTmp != PositionDesireTmp)
-    {
-      console_Debug("test1");
-      stepper.enable();
-      stepper.rotate(360);
-      stepper.disable();
+    // PositionDesireTmp = Get_Position_Desire();
 
-      if(Timer_Motor(7000))
-      {
-        Blynk_Run();
-      } 
-    }
-    Set_Motor_Pos(PositionDesireTmp);
+    // while(MotorPositionTmp != PositionDesireTmp)
+    // {
+    //   console_Debug("test1");
+    //   stepper.enable();
+    //   stepper.rotate(360);
+    //   stepper.disable();
+
+    //   if(Timer_Motor(7000))
+    //   {
+    //     Blynk_Run();
+    //   } 
+    // }
+    // Set_Motor_Pos(PositionDesireTmp);
 
     
+    digitalWrite(SLEEP, HIGH);
+    stepper.move(1600*5);
+    digitalWrite(SLEEP, LOW);
 
     //si manuelle attend un mouvement des GPIO/Blynk
 

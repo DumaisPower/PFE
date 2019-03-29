@@ -15,7 +15,8 @@
 
 /*************************Blynk Comz ***********************/
 #define BLYNK_PRINT Serial
-
+#define CITY_ID_CHAR 7
+#define DEFAULT_CITY_ID "6077243"
 /*************************Run mode********************************/
 #define STATE_MANUEL 0
 #define STATE_AUTO 1
@@ -35,7 +36,7 @@
 #define TEMP_DESIRE 11
 #define NIV_SUN 12
 
-#define SENSOR_REFRESH_MILISEC 900000 //900000 = 15 min
+#define SENSOR_REFRESH_MILISEC 20000 //900000 = 15 min
 
 //tâche principal
 void Task_Communication(void * parameter);

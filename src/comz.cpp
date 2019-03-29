@@ -41,6 +41,7 @@ int niveauBatteriePourcent;
 String tamponJson;
 double TempExtK;                 
 double TempExtC;
+String CityID = DEFAULT_CITY_ID;
 
 //motor
 bool MotorChange;
@@ -78,14 +79,12 @@ void Comz_Init()
 
   delay(500); 
 
+  return;
 }
 
 void Comz_Setup()
 {
-  Blynk.virtualWrite(WEBHOOK, "http://api.openweathermap.org/data/2.5/weather?id=6077243&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
-
-  Set_Max_Position();
-
+ // Set_Max_Position();
   return;
 }
 
@@ -108,23 +107,27 @@ void Task_Communication(void * parameter)
     if(Timer_Sensor(SENSOR_REFRESH_MILISEC))
     {
       xSemaphoreGive(SemaphoreSensor);//do sensor task
+      
+      Set_Outside_Temp();//do the json black magic
 
       //xSemaphoreGive(SemaphoreIA);//do IA task                  not yet implement
 
       Update_Blynk_Sensor();
+
+      xSemaphoreGive(SemaphoreMotor);
     }  
     
-    if(MotorChange)
-    {
-      xSemaphoreGive(SemaphoreMotor);//do motor taksk
+    // if(MotorChange)
+    // {
+    //   xSemaphoreGive(SemaphoreMotor);//do motor taksk
 
-      MotorPositionPercentage = Step_To_Percentage(MotorPosition);
+    //   MotorPositionPercentage = Step_To_Percentage(MotorPosition);
 
-      Update_Blynk_Motor_Pos();
-    }
+    //   Update_Blynk_Motor_Pos();
+    // }
     
     //while no change go to sleep
-    Go_To_Sleep();
+    //Go_To_Sleep();
 
   }
   vTaskDelete( NULL );
@@ -138,6 +141,18 @@ void Update_Blynk_Sensor()
   Blynk_Virtual_Write(TEMP_EXT, TempExtC);
 
   Blynk_Virtual_Write(NIV_SUN, SunLevel);
+
+  console_Debug("Sun Level");
+  console_Debug_Double(SunLevel);
+
+  console_Debug("object IR temp");
+  console_Debug_Double(ObjectTempIR);
+
+  console_Debug("ambiant IR temp");
+  console_Debug_Double(insideTempIR); 
+
+  console_Debug("ambiant Analog temp");
+  console_Debug_Double(insideTempAnalog);
 
   return;
 }
@@ -168,7 +183,7 @@ void Set_Max_Position()
 
 void Go_To_Sleep()
 {
-  console_Debug("Entering sleep mode");
+  console_Debug("Entering sleep");
 
   //stop wifi connection
   esp_wifi_stop();
@@ -189,8 +204,8 @@ void console_Err(esp_err_t  err, String StringToPrint)
 {
   const char * err_name;
   err_name = esp_err_to_name(err);
-  terminal.println(StringToPrint + err_name );
-  terminal.flush();
+  console_Debug(StringToPrint + err_name );
+  Blynk_Flush_Terminal();
   
   return;
 }
@@ -210,6 +225,8 @@ void Blynk_Clear_Terminal()
 void Blynk_Print_Terminal(String StringToPrint)
 {
   terminal.println(StringToPrint);
+  Blynk_Flush_Terminal();
+  delay(100);
   return;
 }
 
@@ -222,18 +239,24 @@ void Blynk_Flush_Terminal()
 void console_Debug(String StringToPrint)
 {
   terminal.println(StringToPrint); 
+  Blynk_Flush_Terminal();
+  delay(100);
   return;
 }
 
 void console_Debug_Int(int IntToPrint)
 {
   terminal.println(IntToPrint);
+  Blynk_Flush_Terminal();
+  delay(100);
   return;
 }
 
 void console_Debug_Double(double DoubleToPrint)
 {
   terminal.println(DoubleToPrint);
+  Blynk_Flush_Terminal();
+  delay(100);
   return;
 }
 
@@ -261,6 +284,27 @@ BLYNK_WRITE(NIV_STORE_MAN)
   return;
 }
 
+BLYNK_WRITE(CITY_ID)
+{
+  String CityIDTmp;
+  CityIDTmp = param.asInt();  // met la valeur du slider dans la variable setStore
+  if (CityIDTmp.length() == CITY_ID_CHAR )
+  {
+   CityID = CityIDTmp;
+  }
+  else
+  {
+    CityID = DEFAULT_CITY_ID;
+  }
+  return;
+}
+
+BLYNK_WRITE(TEMP_EXT)
+{
+  TempExtC = param.asInt();  
+  return;
+}
+
 BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
 {
   switch (param.asInt())
@@ -281,7 +325,7 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
 
 void Set_Outside_Temp()
 {
-
+  Blynk.virtualWrite(WEBHOOK,"http://api.openweathermap.org/data/2.5/weather?id=" + CityID + "&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
   StaticJsonDocument<2000> doc;
   DeserializationError error = deserializeJson(doc,tamponJson);     
   if (error) 
@@ -294,7 +338,7 @@ void Set_Outside_Temp()
     TempExtK = doc["main"]["temp"];                   
     TempExtC = TempExtK - 273.15;                        
 
-    Blynk.virtualWrite(TEMP_EXT, TempExtC);
+    Blynk_Virtual_Write(TEMP_EXT, TempExtC);
 
     return;
 }

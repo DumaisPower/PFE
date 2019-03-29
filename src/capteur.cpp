@@ -45,9 +45,8 @@ void Sensor_Init()
   delay(500); 
 
   Wire.begin(SDA1,SCL1);
-  //I2Cone.begin(SDA1,SCL1,400000); // SDA pin 21, SCL pin 22 TTGO TQ
 
-
+  return;
 }
 
 void Sensor_Setup()
@@ -73,7 +72,7 @@ void Task_Sensor(void * parameter)
     //wating for a command
     xSemaphoreTake(SemaphoreSensor, portMAX_DELAY);
 
-    console_Debug("test2");
+    console_Debug("Doing Sensor Task");
 
     //update the sensor value
     Update_Inside_Temp_Analog();
@@ -101,35 +100,28 @@ void Update_Inside_Temp_Analog()
 {
   uint16_t Tempon;
   Tempon = analogRead(AnalogTMP);
-  insideTempAnalogTmp = ((Tempon*(3300.00/1024.00) - 500) / 100.000);
-  console_Debug("ambiant Analog temp");
-  console_Debug_Double(insideTempAnalogTmp);
-  Blynk_Virtual_Write(TEMP_INT, insideTempAnalogTmp);
-  return ;
+  insideTempAnalogTmp = ((Tempon*(3300.00/1024.00) - 350) / 100.000);
 
+  return ;
 }
 
 void  Update_Inside_Temp_IR()
 {
   insideTempIRTmp = IR_Sensor.readAmbientTempC();
-  console_Debug("ambiant IR temp");
-  console_Debug_Double(insideTempIRTmp); 
+
   return ;
 }
 
 void Update_Object_Temp_IR()
 {
   ObjectTempIRTmp = IR_Sensor.readObjectTempC();
-  console_Debug("object IR temp");
-  console_Debug_Double(ObjectTempIRTmp);
+
   return ;
 }
 
 void Update_Sun()
 {
   SunLevelTmp = analogRead(AnalogSUN);
-  console_Debug("Sun Level");
-  console_Debug_Double(SunLevelTmp);
 
   return ;
 }
