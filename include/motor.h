@@ -31,5 +31,10 @@ void Motor_Setup();
 void Position_Init();
 float Get_Current();
 bool Timer_Motor(int MiliSeconde);
+void Motor_OFF();
+void Motor_ON();
+void Time_To_Move(double Step);
+
+
 
 #endif // MOTOR_H_

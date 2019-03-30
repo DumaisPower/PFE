@@ -18,12 +18,15 @@ TaskHandle_t TaskMot;
 extern SemaphoreHandle_t	BarrierMotor;
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
+extern SemaphoreHandle_t	SemaphoreComz;
 
 unsigned long currentMillisMotor;
 unsigned long nextMillisMotor = 0;
+double TimeToMove;
 
-double MotorPositionTmp;
-double PositionDesireTmp;
+double MotorPositionTmp = 0;
+double PositionDesireTmp=0;
+double StepToMoveTmp = 0;
 float LowCurrent;
 
 
@@ -47,15 +50,19 @@ void Motor_Setup()
   stepper.begin(RPM);
   // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
   // stepper.setEnableActiveState(LOW);
-  digitalWrite(SLEEP, LOW);
-
+  Motor_OFF();
+  
   // Position_Init();
+  Set_Motor_Pos(0);
+
+  Update_Blynk_Motor_Pos();
+
   return;
 }
 
 void Position_Init()
 {
-  digitalWrite(SLEEP, HIGH);
+  Motor_ON();
 
   stepper.move(1600);
 
@@ -70,9 +77,10 @@ void Position_Init()
       Blynk_Run();
     }
   }
-  digitalWrite(SLEEP, LOW);
-  
+
   stepper.move(MOTOR_POS_OFFSET);
+
+  Motor_OFF();
 
   MotorPositionTmp = 0;
 
@@ -107,27 +115,27 @@ void Task_Moteur(void * parameter)
 
     console_Debug("Doing Motor Task");
 
-    // PositionDesireTmp = Get_Position_Desire();
+    PositionDesireTmp = Get_Position_Desire();
+    MotorPositionTmp = Get_Motor_Pos();
+    StepToMoveTmp = Get_Step_To_Move();
+    Time_To_Move(StepToMoveTmp);
+    Motor_ON();
 
-    // while(MotorPositionTmp != PositionDesireTmp)
-    // {
-    //   console_Debug("test1");
-    //   stepper.enable();
-    //   stepper.rotate(360);
-    //   stepper.disable();
+    console_Debug_Double(TimeToMove);
+    stepper.move(StepToMoveTmp);
+    nextMillisMotor = millis();
 
-    //   if(Timer_Motor(7000))
-    //   {
-    //     Blynk_Run();
-    //   } 
-    // }
-    // Set_Motor_Pos(PositionDesireTmp);
+    do
+    {
+      Blynk_Run();
+      currentMillisMotor = millis();
+    } while (currentMillisMotor < nextMillisMotor + TimeToMove);
 
-    
-    digitalWrite(SLEEP, HIGH);
-    stepper.move(1600*5);
-    digitalWrite(SLEEP, LOW);
-
+     
+    Motor_OFF();
+    console_Debug_Double(PositionDesireTmp);
+    Set_Motor_Pos(PositionDesireTmp);
+    console_Debug_Double(PositionDesireTmp);
     //si manuelle attend un mouvement des GPIO/Blynk
 
       //compte le nombre de step a tournee 
@@ -142,7 +150,10 @@ void Task_Moteur(void * parameter)
 
       //met a jour blynk
 
-      //retourne a attendre une nouvelle commande
+      //retourne a attendre une nouvelle commande.
+
+    xSemaphoreGive(SemaphoreComz);
+
   }
   vTaskDelete( NULL );
 }
@@ -156,6 +167,24 @@ bool Timer_Motor(int MiliSeconde)
       return true;
     }
     return false;
+}
+
+void Motor_OFF()
+{
+digitalWrite(SLEEP, LOW);
+return;
+}
+
+void Motor_ON()
+{
+digitalWrite(SLEEP, HIGH);
+return;
+}
+
+void Time_To_Move(double Step)
+{
+  TimeToMove = (((Step / MOTOR_STEPS) * (RPM / 60))*1000);
+  return ;
 }
 
 

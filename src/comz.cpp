@@ -24,6 +24,7 @@ WidgetTerminal terminal(TERMINAL);
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 extern SemaphoreHandle_t	SemaphoreSensor;
+extern SemaphoreHandle_t	SemaphoreComz;
 
 TaskHandle_t TaskCom;
 
@@ -44,11 +45,13 @@ double TempExtC;
 String CityID = DEFAULT_CITY_ID;
 
 //motor
-bool MotorChange;
+bool MotorChange = false;
 double PositionDesire;
+double PositionDesirePercentage;
 double MotorPosition;
 double MotorPositionPercentage;
 double MaxPosition;
+double StepToMove;
 
 //capteur
 double insideTempAnalog;
@@ -77,22 +80,24 @@ void Comz_Init()
   //Connect to wifi
   Blynk.begin(auth, ssid, pass);
 
-  delay(500); 
+  delay(1000); 
 
   return;
 }
 
 void Comz_Setup()
 {
- // Set_Max_Position();
+  Set_Max_Position(DEFAULT_LENGHT);
+
+  Blynk.virtualWrite(AUTO_MAN,2);
+  Blynk.syncVirtual(AUTO_MAN);
+  Blynk.run();
+  delay(500);
   return;
 }
 
 void Task_Communication(void * parameter)
 {
-  //setup for comz
-  console_Debug("Task Comz Start");
- 
   Comz_Setup();
 
   //waiting every task to be setup
@@ -107,24 +112,28 @@ void Task_Communication(void * parameter)
     if(Timer_Sensor(SENSOR_REFRESH_MILISEC))
     {
       xSemaphoreGive(SemaphoreSensor);//do sensor task
-      
+      delay(500);
+
       Set_Outside_Temp();//do the json black magic
 
       //xSemaphoreGive(SemaphoreIA);//do IA task                  not yet implement
 
       Update_Blynk_Sensor();
 
-      xSemaphoreGive(SemaphoreMotor);
     }  
     
-    // if(MotorChange)
-    // {
-    //   xSemaphoreGive(SemaphoreMotor);//do motor taksk
+    if(MotorChange)
+    { 
+      xSemaphoreGive(SemaphoreMotor);//do motor taksk
+      xSemaphoreTake(SemaphoreComz,portMAX_DELAY);
+      console_Debug_Double(MotorPosition);
+      MotorPositionPercentage = Step_To_Percentage(MotorPosition);
+      console_Debug_Double(MotorPositionPercentage);
 
-    //   MotorPositionPercentage = Step_To_Percentage(MotorPosition);
+      Update_Blynk_Motor_Pos();
 
-    //   Update_Blynk_Motor_Pos();
-    // }
+      Reset_Motor_Change();
+    }
     
     //while no change go to sleep
     //Go_To_Sleep();
@@ -174,10 +183,10 @@ double Percentage_To_Step(double percentage)
   return (percentage / 100) * MaxPosition;
 }
 
-void Set_Max_Position()
+void Set_Max_Position(double Feet)
 {
   //formule qui convertie le nombre de metre en step
-  MaxPosition = 10000 ; 
+  MaxPosition = Feet * 4000 ; 
   return;
 }
 
@@ -281,6 +290,18 @@ BLYNK_WRITE(HAUTEUR_FENETRE) //WEBHOOK
 BLYNK_WRITE(NIV_STORE_MAN)
 {
   setStore = param.asInt();  // met la valeur du slider dans la variable setStore
+  if(!controle)
+  {
+    Set_Position_Desire(setStore);
+    Set_Step_To_Move(Get_Position_Desire());
+    Set_Motor_Change();
+    console_Debug("test");
+  }
+  else if(controle)
+  {
+    Update_Blynk_Motor_Pos();
+  }
+
   return;
 }
 
@@ -311,12 +332,10 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
   {
     case 1: { 
         controle = STATE_MANUEL;
-        Set_Motor_Change();
         break;
       }
     case 2: { 
         controle = STATE_AUTO;
-        Set_Motor_Change();
         break;
       }
     }
@@ -373,8 +392,9 @@ void Reset_Motor_Change()
 
 void Set_Position_Desire(int Pourcentage)
 {
+  PositionDesirePercentage = Pourcentage;
+  PositionDesire = Percentage_To_Step(Pourcentage);
 
-  //formule qui calcul le nombre de step du moteur
   return ;
 }
 
@@ -385,9 +405,7 @@ double Get_Position_Desire()
 
 void Set_Motor_Pos(double NewPosition)
 {
-
-  MotorPosition = NewPosition;
-  //formule qui calcul le nombre de step du moteur
+  MotorPosition =  NewPosition;
   return ;
 }
 
@@ -438,4 +456,16 @@ void Set_Sun(double NewSunLevel)
 double Get_Sun()
 {
   return SunLevel;
+}
+
+void Set_Step_To_Move(double PosDesire)
+{
+  StepToMove = PosDesire - MotorPosition;
+  
+  return;
+}
+
+double Get_Step_To_Move()
+{
+  return StepToMove;
 }

@@ -33,6 +33,7 @@ void Config_Init();
 /**********************Semaphore for task manager********************************/
 SemaphoreHandle_t SemaphoreMotor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t SemaphoreSensor = xSemaphoreCreateCounting( 1, 0 );
+SemaphoreHandle_t	SemaphoreComz = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierComz = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierMotor = xSemaphoreCreateCounting( 1, 0 );
 
@@ -83,6 +84,8 @@ void Config_Init()
   Blynk_Flush_Terminal();
   delay(300); 
 
+  //setup for comz
+  console_Debug("Task Comz Start");
   //changing cpu speed
   //rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
 

@@ -20,6 +20,8 @@
 /*************************Run mode********************************/
 #define STATE_MANUEL 0
 #define STATE_AUTO 1
+/*************************Default value******************************/
+#define DEFAULT_LENGHT 3
 
 /**************************Blynk Widget pin***********************/
 #define TERMINAL 0
@@ -91,7 +93,7 @@ bool Timer_Sensor(int MiliSeconde);
 
 /*************************Get/Set Motor variable************************/
 //set max position in step for the blind
-void Set_Max_Position();
+void Set_Max_Position(double Feet);
 
 //put the slider bar to the real postion of the motor
 void Update_Blynk_Motor_Pos();
@@ -119,6 +121,13 @@ double Step_To_Percentage(double step);
 
 //convert percentage to motor step 
 double Percentage_To_Step(double percentage);
+
+//calculate how many step the motor as to turn
+void Set_Step_To_Move(double PosDesire);
+
+//return the value of the turn to do
+double Get_Step_To_Move();
+
 
 /*************************Get/Set Sensor variable************************/
 //return the inside temperature get by the analog sensor
