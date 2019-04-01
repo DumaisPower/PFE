@@ -21,6 +21,8 @@ TwoWire I2Cone = TwoWire(0);
 extern SemaphoreHandle_t	BarrierMotor;
 extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreSensor;
+extern SemaphoreHandle_t	BarrierSensor;
+extern SemaphoreHandle_t	SemaphoreComz;
 
 /******************Variable**********************/
 double insideTempAnalogTmp;
@@ -63,7 +65,8 @@ void Task_Sensor(void * parameter)
   
   Sensor_Setup();
 
-  xSemaphoreGive(BarrierMotor);
+  xSemaphoreTake(BarrierSensor,portMAX_DELAY);
+  xSemaphoreGive(BarrierMotor);//retourne a motor
   
   //run task sensor
   while(true)
@@ -92,6 +95,8 @@ void Task_Sensor(void * parameter)
 
     Set_Object_Temp_IR(ObjectTempIRTmp);
 
+    xSemaphoreGive(SemaphoreComz); //retourne a comz
+
   }
   vTaskDelete( NULL );
 }
@@ -108,6 +113,10 @@ void Update_Inside_Temp_Analog()
 void  Update_Inside_Temp_IR()
 {
   insideTempIRTmp = IR_Sensor.readAmbientTempC();
+  if (insideTempIRTmp > 100 )
+  {
+    Wire.begin(SDA1,SCL1);
+  }
 
   return ;
 }

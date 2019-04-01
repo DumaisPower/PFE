@@ -33,6 +33,7 @@ TaskHandle_t TaskCom;
 bool controle = STATE_MANUEL;
 int setStore;
 int HauteurFenetre;
+bool StayAwake;
 
 //baterie
 double niveauBatterie;
@@ -89,10 +90,8 @@ void Comz_Setup()
 {
   Set_Max_Position(DEFAULT_LENGHT);
 
-  Blynk.virtualWrite(AUTO_MAN,2);
-  Blynk.syncVirtual(AUTO_MAN);
-  Blynk.run();
   delay(500);
+
   return;
 }
 
@@ -112,7 +111,7 @@ void Task_Communication(void * parameter)
     if(Timer_Sensor(SENSOR_REFRESH_MILISEC))
     {
       xSemaphoreGive(SemaphoreSensor);//do sensor task
-      delay(500);
+      xSemaphoreTake(SemaphoreComz,portMAX_DELAY);//wait for return of sensor
 
       Set_Outside_Temp();//do the json black magic
 
@@ -125,7 +124,8 @@ void Task_Communication(void * parameter)
     if(MotorChange)
     { 
       xSemaphoreGive(SemaphoreMotor);//do motor taksk
-      xSemaphoreTake(SemaphoreComz,portMAX_DELAY);
+      xSemaphoreTake(SemaphoreComz,portMAX_DELAY);//wait for return of motor
+
       console_Debug_Double(MotorPosition);
       MotorPositionPercentage = Step_To_Percentage(MotorPosition);
       console_Debug_Double(MotorPositionPercentage);
@@ -133,9 +133,16 @@ void Task_Communication(void * parameter)
       Update_Blynk_Motor_Pos();
 
       Reset_Motor_Change();
+
+      if(controle == STATE_MANUEL)
+      {
+        //skip sleep for 30 seconde
+        StayAwake = true;
+      }
     }
     
     //while no change go to sleep
+
     //Go_To_Sleep();
 
   }
@@ -281,7 +288,7 @@ BLYNK_WRITE(WEBHOOK) //WEBHOOK
   return;
 }
 
-BLYNK_WRITE(HAUTEUR_FENETRE) //WEBHOOK
+BLYNK_WRITE(HAUTEUR_FENETRE) 
 {
   HauteurFenetre = param.asInt();
   return;
@@ -290,14 +297,13 @@ BLYNK_WRITE(HAUTEUR_FENETRE) //WEBHOOK
 BLYNK_WRITE(NIV_STORE_MAN)
 {
   setStore = param.asInt();  // met la valeur du slider dans la variable setStore
-  if(!controle)
+  if(controle ==  STATE_MANUEL)
   {
     Set_Position_Desire(setStore);
     Set_Step_To_Move(Get_Position_Desire());
     Set_Motor_Change();
-    console_Debug("test");
   }
-  else if(controle)
+  else if(controle  ==  STATE_AUTO)
   {
     Update_Blynk_Motor_Pos();
   }
@@ -344,22 +350,22 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
 
 void Set_Outside_Temp()
 {
+  
   Blynk.virtualWrite(WEBHOOK,"http://api.openweathermap.org/data/2.5/weather?id=" + CityID + "&appid=46f4c65c517848ec7a0bb9282b4e0ec8");
   StaticJsonDocument<2000> doc;
-  DeserializationError error = deserializeJson(doc,tamponJson);     
-  if (error) 
+
+  if (tamponJson != "")
   {
-    console_Debug("deserializeJson() failed with code ");             
-    console_Debug(error.c_str());
-  }  
+    deserializeJson(doc,tamponJson);      
  
     String name = doc["name"];                             
     TempExtK = doc["main"]["temp"];                   
     TempExtC = TempExtK - 273.15;                        
 
     Blynk_Virtual_Write(TEMP_EXT, TempExtC);
-
-    return;
+  }
+  
+  return;
 }
 
 double Get_Outside_Temp()

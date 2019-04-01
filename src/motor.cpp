@@ -48,8 +48,7 @@ void Motor_Init()
 void Motor_Setup()
 {
   stepper.begin(RPM);
-  // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-  // stepper.setEnableActiveState(LOW);
+
   Motor_OFF();
   
   // Position_Init();
@@ -105,7 +104,6 @@ void Task_Moteur(void * parameter)
 
   xSemaphoreTake(BarrierMotor, portMAX_DELAY);
   xSemaphoreGive(BarrierComz);
-
   //run task motor
   while(true)
   {
@@ -119,40 +117,16 @@ void Task_Moteur(void * parameter)
     MotorPositionTmp = Get_Motor_Pos();
     StepToMoveTmp = Get_Step_To_Move();
     Time_To_Move(StepToMoveTmp);
+
     Motor_ON();
 
-    console_Debug_Double(TimeToMove);
     stepper.move(StepToMoveTmp);
-    nextMillisMotor = millis();
 
-    do
-    {
-      Blynk_Run();
-      currentMillisMotor = millis();
-    } while (currentMillisMotor < nextMillisMotor + TimeToMove);
-
-     
     Motor_OFF();
-    console_Debug_Double(PositionDesireTmp);
+
     Set_Motor_Pos(PositionDesireTmp);
-    console_Debug_Double(PositionDesireTmp);
-    //si manuelle attend un mouvement des GPIO/Blynk
 
-      //compte le nombre de step a tournee 
-
-      //met a jour blynk
-
-      //retourne a attendre une nouvelle commande
-
-    //si automatique attend un mouvement des Sensor/IA/GPIO/Blynk
-
-      //compte le nombre de step a tournee 
-
-      //met a jour blynk
-
-      //retourne a attendre une nouvelle commande.
-
-    xSemaphoreGive(SemaphoreComz);
+    xSemaphoreGive(SemaphoreComz); //retourne a comz
 
   }
   vTaskDelete( NULL );

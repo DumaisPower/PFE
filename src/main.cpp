@@ -34,8 +34,10 @@ void Config_Init();
 SemaphoreHandle_t SemaphoreMotor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t SemaphoreSensor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t	SemaphoreComz = xSemaphoreCreateCounting( 1, 0 );
+SemaphoreHandle_t	SemaphoreIA = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierComz = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t BarrierMotor = xSemaphoreCreateCounting( 1, 0 );
+SemaphoreHandle_t BarrierSensor = xSemaphoreCreateCounting( 1, 0 );
 
 
 wifi_init_config_t config ;
@@ -51,6 +53,8 @@ void setup()
   Motor_Init();
 
   Sensor_Init();
+
+  IA_Init();
 
   Blynk_Print_Terminal("All Initialisation done and succesfull");
 
