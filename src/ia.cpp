@@ -26,7 +26,14 @@ double InsideTempIRIA ;
 double ObjectTempIRIA ;
 double OutsideTempIA ;
 double SunLevelIA;
- 
+bool DayNight;
+bool CurrentState;
+bool WatingChangeState = false;
+bool WaitingDayNight = false;
+double NiveauBatterieTmp;
+double NiveauBatteriePourcentTmp;
+
+
 void IA_Init()
 {
     xTaskCreatePinnedToCore(
@@ -74,7 +81,6 @@ void Task_IA(void * parameter)
 
     Automatique_Position();
     
-
     xSemaphoreGive(SemaphoreComz); //retourne a comz
 
   }
@@ -83,8 +89,27 @@ void Task_IA(void * parameter)
 
 void Change_Mode()
 {
+    
+    if(CurrentState == STATE_MANUEL and not WatingChangeState)
+    {
+        if(DayNight == DAY)
+        {
+            WaitingDayNight = NIGHT;
+        }
+        else 
+        {
+            WaitingDayNight = DAY;
+        }
+        WatingChangeState = true;
+    }
 
+    if (CurrentState == STATE_AUTO or DayNight == WaitingDayNight)
+    {
+        WatingChangeState = false;
+        Set_State_Auto_Manuel(STATE_AUTO);
+    }
 
+    return;
 }
 
 void Automatique_Position()
@@ -105,9 +130,60 @@ void Update_Local_Variable()
 
     SunLevelIA = Get_Sun();
 
+    CurrentState = Get_State_Auto_Manuel();
+
+    Update_Day_Night();
+
+    Read_Niv_Bat();
+
+    Bat_To_Pourcentage();
+
+
+
     return;
 
 }
 
+void Update_Day_Night()
+{
+    if(SunLevelIA >= DAYLIGHTMIN)
+    {
+        DayNight = DAY;
+    }
+    else 
+    {
+        DayNight = NIGHT;
+    }
+    return ;
+}
 
+void Bat_To_Pourcentage()
+{
+  
+  if(NiveauBatterieTmp >= 3.9)
+  {
+    NiveauBatteriePourcentTmp =  41.6667*NiveauBatterieTmp-75;
+  }
+  else if((NiveauBatterieTmp < 3.9) && (NiveauBatterieTmp > 3.6))
+  {
+    NiveauBatteriePourcentTmp = 250*NiveauBatterieTmp-887.5;
+  }
+  else            //niveauBatterie <= 3.6
+  {
+    NiveauBatteriePourcentTmp = 16.129*NiveauBatterieTmp-45.5645;
+  }
 
+  Blynk_Virtual_Write(NIV_BAT, NiveauBatteriePourcentTmp);
+
+  return;
+}
+
+void Read_Niv_Bat()
+{
+    //read tension on bat
+}
+
+void Set_Bat_Niv_Color()
+{
+    
+}

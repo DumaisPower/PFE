@@ -29,8 +29,7 @@ double insideTempAnalogTmp;
 double insideTempIRTmp;
 double ObjectTempIRTmp;
 double SunLevelTmp;
-extern double niveauBatterie;
-extern float niveauBatteriePourcent;
+
 
 void Sensor_Init()
 {
@@ -135,25 +134,6 @@ void Update_Sun()
   return ;
 }
 
-int Get_Niv_Bat_Poucent()
-{
-  
-  if(niveauBatterie >= 3.9)
-  {
-    niveauBatteriePourcent = 41.6667*niveauBatterie-75;
-  }
-  else if((niveauBatterie < 3.9) && (niveauBatterie > 3.6))
-  {
-    niveauBatteriePourcent = 250*niveauBatterie-887.5;
-  }
-  else            //niveauBatterie <= 3.6
-  {
-    niveauBatteriePourcent = 16.129*niveauBatterie-45.5645;
-  }
 
-  Blynk_Virtual_Write(NIV_BAT, niveauBatteriePourcent);
-
-  return niveauBatteriePourcent;
-}
 
 

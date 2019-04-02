@@ -91,6 +91,12 @@ void Go_To_Sleep();
 //timer that update sensor when done
 bool Timer_Sensor(int MiliSeconde);
 
+//return current state of the module
+bool Get_State_Auto_Manuel();
+
+//set state auto manuel
+void Set_State_Auto_Manuel(bool STATE);
+
 /*************************Get/Set Motor variable************************/
 //set max position in step for the blind
 void Set_Max_Position(double Feet);

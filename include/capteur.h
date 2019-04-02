@@ -20,6 +20,5 @@ void  Update_Inside_Temp_Analog();
 void  Update_Inside_Temp_IR();
 void Update_Object_Temp_IR();
 void Update_Sun();
-int Get_Niv_Bat_Poucent();
 void Sensor_Setup();
 #endif // SENSOR_H_

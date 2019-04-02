@@ -36,8 +36,8 @@ int HauteurFenetre;
 bool StayAwake;
 
 //baterie
-double niveauBatterie;
-int niveauBatteriePourcent;
+double NiveauBatterie;
+double NiveauBatteriePourcent;
 
 //jason
 String tamponJson;
@@ -348,6 +348,18 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
     return;
 }
 
+bool Get_State_Auto_Manuel()
+{
+  return  controle;
+}
+
+void Set_State_Auto_Manuel(bool STATE)
+{
+  Blynk_Virtual_Write(AUTO_MAN,STATE);
+  return;
+}
+
+
 void Set_Outside_Temp()
 {
   
@@ -474,4 +486,21 @@ void Set_Step_To_Move(double PosDesire)
 double Get_Step_To_Move()
 {
   return StepToMove;
+}
+
+void Set_Niv_Batterie(double NivBat,String ColorCode,bool Notifiy)
+{
+  Blynk_Virtual_Write(NIV_BAT,NivBat);
+  Blynk.setProperty(NIV_BAT,"color",ColorCode);
+  if(Notifiy)
+  {
+    Blynk.notify("La batterie du store est base");
+  }
+  
+  return;
+}
+
+double Get_Niv_Batterie()
+{
+  return NiveauBatteriePourcent;
 }
