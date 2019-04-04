@@ -29,7 +29,6 @@
 /*************************sub program declaration******************************/
 void Config_Init();
 
-
 /**********************Semaphore for task manager********************************/
 SemaphoreHandle_t SemaphoreMotor = xSemaphoreCreateCounting( 1, 0 );
 SemaphoreHandle_t SemaphoreSensor = xSemaphoreCreateCounting( 1, 0 );

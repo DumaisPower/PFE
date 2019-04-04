@@ -10,6 +10,7 @@
 ⋆ 
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "ia.h"
+#include <stdio.h>
 
 TaskHandle_t TaskIA;
 
@@ -32,7 +33,11 @@ bool WatingChangeState = false;
 bool WaitingDayNight = false;
 double NiveauBatterieTmp;
 double NiveauBatteriePourcentTmp;
-
+bool Notifiy = false;
+String BatColor;
+String RealTimeIA;
+String HeureOuvertureIA;
+String HeureFermetureIA;
 
 void IA_Init()
 {
@@ -51,7 +56,7 @@ void IA_Init()
 
 void IA_Setup()
 {
-
+    pinMode(ANALOGBAT,INPUT);
     return;
 }
 
@@ -80,6 +85,12 @@ void Task_IA(void * parameter)
     Change_Mode();//if too long in manual mode 
 
     Automatique_Position();
+
+    Set_Bat_Niv_Color();
+
+    Heure_Ouverture();
+
+    Heure_Fermeture();
     
     xSemaphoreGive(SemaphoreComz); //retourne a comz
 
@@ -108,7 +119,6 @@ void Change_Mode()
         WatingChangeState = false;
         Set_State_Auto_Manuel(STATE_AUTO);
     }
-
     return;
 }
 
@@ -138,10 +148,13 @@ void Update_Local_Variable()
 
     Bat_To_Pourcentage();
 
+    HeureOuvertureIA = Get_Heure_Fermeture();
 
+    HeureFermetureIA = Get_Heure_Fermeture();
+
+    RealTimeIA = Get_Real_Time();
 
     return;
-
 }
 
 void Update_Day_Night()
@@ -162,28 +175,63 @@ void Bat_To_Pourcentage()
   
   if(NiveauBatterieTmp >= 3.9)
   {
-    NiveauBatteriePourcentTmp =  41.6667*NiveauBatterieTmp-75;
+    NiveauBatteriePourcentTmp =  41.6667 * NiveauBatterieTmp - 75;
   }
   else if((NiveauBatterieTmp < 3.9) && (NiveauBatterieTmp > 3.6))
   {
-    NiveauBatteriePourcentTmp = 250*NiveauBatterieTmp-887.5;
+    NiveauBatteriePourcentTmp = 250 * NiveauBatterieTmp - 887.5;
   }
-  else            //niveauBatterie <= 3.6
+  else         
   {
-    NiveauBatteriePourcentTmp = 16.129*NiveauBatterieTmp-45.5645;
+    NiveauBatteriePourcentTmp = 16.129 * NiveauBatterieTmp - 45.5645;
   }
-
   Blynk_Virtual_Write(NIV_BAT, NiveauBatteriePourcentTmp);
-
   return;
 }
 
 void Read_Niv_Bat()
 {
     //read tension on bat
+    NiveauBatterieTmp = analogRead(ANALOGBAT);
+    return;
 }
 
 void Set_Bat_Niv_Color()
 {
+    if(NiveauBatteriePourcentTmp>80)
+   {
+        BatColor =  "#23C48E"; //green
+        Notifiy = false;
+   }
+   else if(NiveauBatteriePourcentTmp <= 80 && NiveauBatteriePourcentTmp > 55)
+   {
+        BatColor = "#d69e04"; //orange
+        Notifiy = false;
+   }
+   else if(NiveauBatteriePourcentTmp <= 55 && NiveauBatteriePourcentTmp > 30)
+   {
+        BatColor = "#ED9D00"; //yellow
+        Notifiy = false;
+   }
+   else
+   {
+        BatColor =  "#D3435C"; //red 
+        Notifiy = true;
+   }
+    Set_Niv_Batterie(NiveauBatteriePourcentTmp,BatColor,Notifiy);
+    return;
+}
+
+void Heure_Ouverture()
+{
+
+
+
+}
+
+void Heure_Fermeture()
+{
+
+
     
 }

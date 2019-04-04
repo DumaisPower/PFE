@@ -11,17 +11,19 @@
 #include "esp_wifi.h"
 #include "esp_sleep.h"
 #include <ArduinoJson.h> 
-#include <stdbool.h>
+
 
 /*************************Blynk Comz ***********************/
 #define BLYNK_PRINT Serial
 #define CITY_ID_CHAR 7
-#define DEFAULT_CITY_ID "6077243"
+
 /*************************Run mode********************************/
 #define STATE_MANUEL 0
 #define STATE_AUTO 1
 /*************************Default value******************************/
 #define DEFAULT_LENGHT 3
+#define DEFAULT_TEMP_DESIRE 21
+#define DEFAULT_CITY_ID "6077243"
 
 /**************************Blynk Widget pin***********************/
 #define TERMINAL 0
@@ -72,6 +74,8 @@ void console_Debug_Int(int IntToPrint);
 //debug double to terminal
 void console_Debug_Double(double DoubleToPrint);
 
+String Get_Real_Time();
+
 /***************************Blynk Common fonction********************/
 //ping blynk server
 void Blynk_Run();
@@ -96,6 +100,16 @@ bool Get_State_Auto_Manuel();
 
 //set state auto manuel
 void Set_State_Auto_Manuel(bool STATE);
+
+//return l'heure d'ouverture des store
+String Get_Heure_Ouverture();
+
+//return l'heure de fermeture des store
+String Get_Heure_Fermeture();
+
+void Set_Niv_Batterie(double NivBat,String ColorCode,bool Notifiy);
+
+double Get_Niv_Batterie();
 
 /*************************Get/Set Motor variable************************/
 //set max position in step for the blind

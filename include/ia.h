@@ -6,6 +6,8 @@
 #include "comz.h"
 #include "Arduino.h"
 
+#define ANALOGBAT 20 //temporaire a changer ************************************************************************/
+
 #define NIGHT 0
 #define DAY 1
 #define DAYLIGHTMIN 2000
@@ -20,5 +22,7 @@ void Update_Day_Night();
 void Bat_To_Pourcentage();
 void Read_Niv_Bat();
 void Set_Bat_Niv_Color();
+void Heure_Ouverture();
+void Heure_Fermeture();
 
 #endif // IA_H_

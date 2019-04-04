@@ -11,6 +11,11 @@
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "comz.h"
 #include <BlynkSimpleEsp32.h>
+#include <stdbool.h>
+#include <SPI.h>
+#include <Ethernet.h>
+#include <TimeLib.h>
+#include <WidgetRTC.h>
 
 /*******************Your WiFi credentials******************/
 char ssid[] = "HONDAGMC";
@@ -19,6 +24,7 @@ char auth[] = "1334465b93034f92ad14742fb88eb305";
 
 /********************Widget*****************************/
 WidgetTerminal terminal(TERMINAL);
+WidgetRTC rtc;
 
 /*****************Semaphore and barier*****************/
 extern SemaphoreHandle_t	BarrierComz;
@@ -31,19 +37,19 @@ TaskHandle_t TaskCom;
 /****************Variable**************************/
 //Controle Blynk
 bool controle = STATE_MANUEL;
-int setStore;
+int SetStore;
 int HauteurFenetre;
-bool StayAwake;
+
 
 //baterie
-double NiveauBatterie;
 double NiveauBatteriePourcent;
 
 //jason
+String CityID = DEFAULT_CITY_ID;
 String tamponJson;
 double TempExtK;                 
 double TempExtC;
-String CityID = DEFAULT_CITY_ID;
+
 
 //motor
 bool MotorChange = false;
@@ -53,6 +59,7 @@ double MotorPosition;
 double MotorPositionPercentage;
 double MaxPosition;
 double StepToMove;
+int i = 0;
 
 //capteur
 double insideTempAnalog;
@@ -60,9 +67,13 @@ double insideTempIR;
 double ObjectTempIR;
 double SunLevel;
 
+//Time
 unsigned long currentMillisSensor;
 unsigned long nextMillisSensor = 0; 
-
+String HeureOuverture;
+String HeureFermeture;
+String RealTime;
+bool StayAwake;
 
 void Comz_Init()
 {
@@ -119,6 +130,15 @@ void Task_Communication(void * parameter)
 
       Update_Blynk_Sensor();
 
+      if(StayAwake)
+      {
+        if(i == 4)
+        {
+          StayAwake = false;
+          i=0;
+        }  
+        i++;  
+      }
     }  
     
     if(MotorChange)
@@ -142,12 +162,13 @@ void Task_Communication(void * parameter)
     }
     
     //while no change go to sleep
-
-    //Go_To_Sleep();
-
+    if(!StayAwake)
+    {
+      Go_To_Sleep();
+    }
+    
   }
   vTaskDelete( NULL );
-
 }
 
 void Update_Blynk_Sensor()
@@ -193,7 +214,7 @@ double Percentage_To_Step(double percentage)
 void Set_Max_Position(double Feet)
 {
   //formule qui convertie le nombre de metre en step
-  MaxPosition = Feet * 4000 ; 
+  MaxPosition = 800;//Feet * 4000 ; 
   return;
 }
 
@@ -282,6 +303,11 @@ void Blynk_Virtual_Write(int pin, double Value)
   return;
 }
 
+BLYNK_CONNECTED()
+{
+  rtc.begin();
+}
+
 BLYNK_WRITE(WEBHOOK) //WEBHOOK
 {
   tamponJson = param.asStr();
@@ -296,10 +322,10 @@ BLYNK_WRITE(HAUTEUR_FENETRE)
 
 BLYNK_WRITE(NIV_STORE_MAN)
 {
-  setStore = param.asInt();  // met la valeur du slider dans la variable setStore
+  SetStore = param.asInt();  
   if(controle ==  STATE_MANUEL)
   {
-    Set_Position_Desire(setStore);
+    Set_Position_Desire(SetStore);
     Set_Step_To_Move(Get_Position_Desire());
     Set_Motor_Change();
   }
@@ -346,6 +372,26 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
       }
     }
     return;
+}
+
+BLYNK_WRITE(HEURE_OUVERTURE)
+{
+  HeureOuverture = param.asInt();
+}
+
+BLYNK_WRITE(HEURE_FERMETURE)
+{
+  HeureFermeture = param.asInt();
+}
+
+String Get_Heure_Ouverture()
+{
+  return HeureOuverture;
+}
+
+String Get_Heure_Fermeture()
+{
+  return HeureFermeture;
 }
 
 bool Get_State_Auto_Manuel()
@@ -503,4 +549,10 @@ void Set_Niv_Batterie(double NivBat,String ColorCode,bool Notifiy)
 double Get_Niv_Batterie()
 {
   return NiveauBatteriePourcent;
+}
+
+String Get_Real_Time()
+{
+  RealTime = String(hour() + ":" + minute());
+  return RealTime;
 }

@@ -11,9 +11,7 @@
 ⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆⋆*/
 #include "capteur.h"
 
-void Task_Sensor(void * parameter);
 TaskHandle_t TaskSen;
-
 
 Adafruit_MLX90614 IR_Sensor = Adafruit_MLX90614();
 TwoWire I2Cone = TwoWire(0);
@@ -52,8 +50,8 @@ void Sensor_Init()
 
 void Sensor_Setup()
 {
-  pinMode(AnalogTMP,INPUT);
-  pinMode(AnalogSUN,INPUT);
+  pinMode(ANALOGTMP,INPUT);
+  pinMode(ANALOGSUN,INPUT);
 
   return;
 }
@@ -103,7 +101,7 @@ void Task_Sensor(void * parameter)
 void Update_Inside_Temp_Analog()
 {
   uint16_t Tempon;
-  Tempon = analogRead(AnalogTMP);
+  Tempon = analogRead(ANALOGTMP);
   insideTempAnalogTmp = ((Tempon*(3300.00/1024.00) - 350) / 100.000);
 
   return ;
@@ -129,7 +127,7 @@ void Update_Object_Temp_IR()
 
 void Update_Sun()
 {
-  SunLevelTmp = analogRead(AnalogSUN);
+  SunLevelTmp = analogRead(ANALOGSUN);
 
   return ;
 }
