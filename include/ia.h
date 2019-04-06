@@ -10,7 +10,7 @@
 
 #define NIGHT 0
 #define DAY 1
-#define DAYLIGHTMIN 2000
+#define DAYLIGHTMIN 40
 
 void Task_IA(void * parameter);
 void IA_Init();

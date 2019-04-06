@@ -128,6 +128,7 @@ void Update_Object_Temp_IR()
 void Update_Sun()
 {
   SunLevelTmp = analogRead(ANALOGSUN);
+  SunLevelTmp = (SunLevelTmp /4096 ) * 100;
 
   return ;
 }

@@ -120,8 +120,8 @@ void Task_Moteur(void * parameter)
 
     Motor_ON();
 
-    stepper.move(StepToMoveTmp);
-
+    Motor_Turn();
+    
     Motor_OFF();
 
     Set_Motor_Pos(PositionDesireTmp);
@@ -159,6 +159,24 @@ void Time_To_Move(double Step)
 {
   TimeToMove = (((Step / MOTOR_STEPS) * (RPM / 60))*1000);
   return ;
+}
+
+void Motor_Turn()
+{
+  while(StepToMoveTmp != 0)
+  {
+    if(StepToMoveTmp > 2400)
+    {
+      stepper.move(2400);
+      StepToMoveTmp = StepToMoveTmp - 2400;
+      Blynk_Run();
+    }
+    else
+    {
+      stepper.move(StepToMoveTmp);
+      StepToMoveTmp = 0;
+    }
+  }
 }
 
 

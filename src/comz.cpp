@@ -20,7 +20,7 @@
 /*******************Your WiFi credentials******************/
 char ssid[] = "HONDAGMC";
 char pass[] = "18182321yougi";
-char auth[] = "1334465b93034f92ad14742fb88eb305";
+char auth[] = "14c79904503442c1aaedbc97d0dd487a";
 
 /********************Widget*****************************/
 WidgetTerminal terminal(TERMINAL);
@@ -164,7 +164,7 @@ void Task_Communication(void * parameter)
     //while no change go to sleep
     if(!StayAwake)
     {
-      Go_To_Sleep();
+      //Go_To_Sleep();
     }
     
   }
@@ -214,7 +214,7 @@ double Percentage_To_Step(double percentage)
 void Set_Max_Position(double Feet)
 {
   //formule qui convertie le nombre de metre en step
-  MaxPosition = 800;//Feet * 4000 ; 
+  MaxPosition = Feet * 4000 ; 
   return;
 }
 

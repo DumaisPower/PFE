@@ -10,7 +10,7 @@
 #define MICROSTEPS 1
 
 // Target RPM for cruise speed
-#define RPM 100
+#define RPM 20
 
 #define DIR 22
 #define STEP 21
@@ -35,5 +35,6 @@ bool Timer_Motor(int MiliSeconde);
 void Motor_OFF();
 void Motor_ON();
 void Time_To_Move(double Step);
+void Motor_Turn();
 
 #endif // MOTOR_H_
