@@ -28,6 +28,7 @@ double MotorPositionTmp = 0;
 double PositionDesireTmp=0;
 double StepToMoveTmp = 0;
 int SideMotor;
+double MotorPositionOffset;
 
 
 void Motor_Init()
@@ -47,12 +48,39 @@ void Motor_Init()
 
   Motor_OFF();
 
-  Set_Motor_Pos(0);
+  Position_Init();
 
   Update_Blynk_Motor_Pos();
 
   return;
 }
+
+void Position_Init()
+{
+  //change speed too limit stall
+
+  MotorPositionOffset = 2*PI*GEAR_SIZE_MM * MOTOR_POS_OFFSET;
+
+  Motor_ON();
+
+  StepToMoveTmp = MaxPosition * Side;
+
+  Motor_Turn();
+
+  StepToMoveTmp = -1 * MotorPositionOffset * Side;
+
+  Motor_Turn();
+
+  Motor_OFF();
+
+  Set_Motor_Pos(0);
+
+  //change back to 20 rpm
+
+  return;
+
+}
+
 
 void Task_Moteur(void * parameter)
 {

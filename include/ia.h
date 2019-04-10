@@ -14,6 +14,7 @@
 #define NIGHT 0
 #define DAY 1
 #define DAYLIGHTMIN 25
+#define WINDOWSUN 60
 
 void Task_IA(void * parameter);
 void IA_Init();

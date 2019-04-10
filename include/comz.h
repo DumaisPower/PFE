@@ -45,6 +45,8 @@
 /*****************************Time refresh************************/
 #define SENSOR_REFRESH_MILISEC 20000 //900000 = 15 min
 #define MOTOR_WAIT_MILISEC 900000
+/*****************************Other constant***************************/
+#define GEAR_SIZE_MM 25
 
 typedef enum {
     CHAR,

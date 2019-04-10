@@ -20,8 +20,7 @@
 #define M0 10
 #define M1 11
 
-#define MOTOR_POS_OFFSET 6400
-#define MOTOR_POS_MAX
+#define MOTOR_POS_OFFSET 4
 
 void Task_Moteur(void * parameter);
 

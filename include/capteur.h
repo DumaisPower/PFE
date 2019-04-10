@@ -20,4 +20,5 @@ void Sensor_Init();
 void Update_Inside_Temp_IR();
 void Update_Object_Temp_IR();
 void Update_Sun();
+int Get_Temp_Desirer();
 #endif // SENSOR_H_

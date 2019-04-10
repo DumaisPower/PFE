@@ -25,6 +25,8 @@ extern SemaphoreHandle_t	SemaphoreSensor;
 double InsideTempIRIA ;
 double ObjectTempIRIA ;
 double OutsideTempIA ;
+int TemperatureDesireIA;
+double MotorPosIA;
 double SunLevelIA;
 bool DayNight;
 bool CurrentState;
@@ -77,8 +79,6 @@ void Task_IA(void * parameter)
 
     console_Debug("Doing IA Task");
 
-    //calculation
-
     Update_Local_Variable();
 
     Change_Mode();//if too long in manual mode 
@@ -125,8 +125,42 @@ void Change_Mode()
 
 void Automatique_Position()
 {
-
-
+  if(CurrentState == STATE_AUTO)
+  {
+    //condition pour ouvrir le store
+    if(((InsideTempIRIA - OutsideTempIA >= 1) or (InsideTempIRIA <= TemperatureDesireIA ))  and (SunLevelIA >= WINDOWSUN))
+    {
+      if(MotorPosIA != 0)
+      {
+      Set_Position_Desire(0);
+      Set_Motor_Change();
+      }
+    }
+    //condition pour fermer le store
+    else if(((OutsideTempIA - InsideTempIRIA >= 1) or (InsideTempIRIA >= TemperatureDesireIA )) and (SunLevelIA >= WINDOWSUN) or ((ObjectTempIRIA >= InsideTempIRIA) and (OutsideTempIA - InsideTempIRIA >= 4)))
+    {
+      if(MotorPosIA != 100)
+      {
+      Set_Position_Desire(100);
+      Set_Motor_Change();
+      }
+    }
+    //si la temperature est atteinte et neutre agit selon le moment de la journée
+    else
+    {
+      if((DayNight == DAY) and (MotorPosIA != 20))
+      {
+        Set_Position_Desire(20);
+        Set_Motor_Change();
+      }
+      else if((DayNight == NIGHT) and (MotorPosIA != 100))
+      {
+        Set_Position_Desire(100);
+        Set_Motor_Change();
+      }
+    }
+  }
+  return;
 }
 
 void Update_Local_Variable()
@@ -137,6 +171,8 @@ void Update_Local_Variable()
   ObjectTempIRIA = Get_Object_Temp_IR();
 
   OutsideTempIA = Get_Outside_Temp();
+
+  TemperatureDesireIA = Get_Temp_Desirer();
 
   SunLevelIA = Get_Sun();
 
@@ -155,6 +191,8 @@ void Update_Local_Variable()
   HeureFermetureIA = Get_Heure_Fermeture();
 
   RealTimeIA = Get_Real_Time();
+
+  MotorPosIA = Get_Motor_Pos();
 
   return;
 }

@@ -108,8 +108,6 @@ void Comz_Init()
   
 
   console_Debug("Comz setup");
-  
-  Set_Max_Position(DEFAULT_LENGHT);
 
   delay(500);
 
@@ -118,6 +116,15 @@ void Comz_Init()
   delay(500);
 
   Update_App_Configuration();
+
+  if(HAUTEUR_FENETRE ==0)
+  {
+    Set_Max_Position(DEFAULT_LENGHT);
+  }
+  else
+  {
+    Set_Max_Position(HAUTEUR_FENETRE);
+  }
 
   
   return;
@@ -173,7 +180,7 @@ void Task_Communication(void * parameter)
   //waiting every task to be setup
   xSemaphoreTake(BarrierComz, portMAX_DELAY);
 
- //run task comz
+  //run task comz
   while(true)
   {
     //give ping to blynk and get value if change
@@ -280,7 +287,11 @@ double Percentage_To_Step(double percentage)
 void Set_Max_Position(double Feet)
 {
   //formule qui convertie le nombre de metre en step
-  MaxPosition = Feet * 4000 ; 
+  double MaxMM = Feet * 304.8;
+  double MMParTour = 2*PI*GEAR_SIZE_MM;
+  double NbTour = (MaxMM / MMParTour) - MOTOR_POS_OFFSET;
+
+  MaxPosition = NbTour * MOTOR_STEPS; 
   return;
 }
 
@@ -476,7 +487,6 @@ void Set_State_Auto_Manuel(bool State)
   return;
 }
 
-
 void Set_Outside_Temp()
 {
   
@@ -504,13 +514,13 @@ double Get_Outside_Temp()
 
 bool Timer_Sensor(int MiliSeconde)
 {
-    currentMillisSensor = millis();
-    if (currentMillisSensor  > nextMillisSensor + MiliSeconde)
-    {     
-      nextMillisSensor = currentMillisSensor;
-      return true;
-    }
-    return false;
+  currentMillisSensor = millis();
+  if (currentMillisSensor  > nextMillisSensor + MiliSeconde)
+  {     
+    nextMillisSensor = currentMillisSensor;
+    return true;
+  }
+  return false;
 }
 
 void Set_Motor_Change()
@@ -645,4 +655,9 @@ void Reset_Motor_Wait()
 {
   WaitMotor = false;
   return;
+}
+
+int Get_Temp_Desirer()
+{
+  return TemperatureDesire;
 }
