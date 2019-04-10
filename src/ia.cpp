@@ -22,7 +22,6 @@ extern SemaphoreHandle_t	SemaphoreIA;
 extern SemaphoreHandle_t	SemaphoreSensor;
 
 /*********************************Variable***********************/
-double InsideTempAnalogIA ;
 double InsideTempIRIA ;
 double ObjectTempIRIA ;
 double OutsideTempIA ;
@@ -33,7 +32,7 @@ bool WatingChangeState = false;
 bool WaitingDayNight = false;
 double NiveauBatterieTmp;
 double NiveauBatteriePourcentTmp;
-bool Notifiy = false;
+int Notifiy = 0;
 String BatColor;
 String RealTimeIA;
 String HeureOuvertureIA;
@@ -51,21 +50,21 @@ void IA_Init()
                     1);                         /* Core id. */
     
   delay(500); 
+
+  console_Debug("IA setup");
+
+  pinMode(36,INPUT);
+
   return;
 }
 
-void IA_Setup()
-{
-    pinMode(ANALOGBAT,INPUT);
-    return;
-}
 
 void Task_IA(void * parameter)
 {
   
   console_Debug("Task IA Start");
 
-  IA_Setup();
+  delay(1000);
   
   xSemaphoreGive(BarrierSensor); //retourne a sensor
 
@@ -91,6 +90,8 @@ void Task_IA(void * parameter)
     Heure_Ouverture();
 
     Heure_Fermeture();
+
+    console_Debug("Exit IA Task");
     
     xSemaphoreGive(SemaphoreComz); //retourne a comz
 
@@ -130,31 +131,32 @@ void Automatique_Position()
 
 void Update_Local_Variable()
 {
-    InsideTempAnalogIA = Get_Inside_Temp_Analog();
 
-    InsideTempIRIA = Get_Inside_Temp_IR();
+  InsideTempIRIA = Get_Inside_Temp_IR();
 
-    ObjectTempIRIA = Get_Object_Temp_IR();
+  ObjectTempIRIA = Get_Object_Temp_IR();
 
-    OutsideTempIA = Get_Outside_Temp();
+  OutsideTempIA = Get_Outside_Temp();
 
-    SunLevelIA = Get_Sun();
+  SunLevelIA = Get_Sun();
 
-    CurrentState = Get_State_Auto_Manuel();
+  CurrentState = Get_State_Auto_Manuel();
 
-    Update_Day_Night();
+  Update_Day_Night();
 
-    Read_Niv_Bat();
+  Blynk_Run();
 
-    Bat_To_Pourcentage();
+  Read_Niv_Bat();
 
-    HeureOuvertureIA = Get_Heure_Fermeture();
+  Bat_To_Pourcentage();
 
-    HeureFermetureIA = Get_Heure_Fermeture();
+  HeureOuvertureIA = Get_Heure_Ouverture();
 
-    RealTimeIA = Get_Real_Time();
+  HeureFermetureIA = Get_Heure_Fermeture();
 
-    return;
+  RealTimeIA = Get_Real_Time();
+
+  return;
 }
 
 void Update_Day_Night()
@@ -185,6 +187,8 @@ void Bat_To_Pourcentage()
   {
     NiveauBatteriePourcentTmp = 16.129 * NiveauBatterieTmp - 45.5645;
   }
+  NiveauBatteriePourcentTmp = (int) NiveauBatteriePourcentTmp;
+
   Blynk_Virtual_Write(NIV_BAT, NiveauBatteriePourcentTmp);
   return;
 }
@@ -192,7 +196,8 @@ void Bat_To_Pourcentage()
 void Read_Niv_Bat()
 {
     //read tension on bat
-    NiveauBatterieTmp = analogRead(ANALOGBAT);
+    NiveauBatterieTmp = analogRead(36);
+    NiveauBatterieTmp =  NiveauBatterieTmp / 600;
     return;
 }
 
@@ -201,22 +206,27 @@ void Set_Bat_Niv_Color()
     if(NiveauBatteriePourcentTmp>80)
    {
         BatColor =  "#23C48E"; //green
-        Notifiy = false;
+        Notifiy = 0;
    }
    else if(NiveauBatteriePourcentTmp <= 80 && NiveauBatteriePourcentTmp > 55)
    {
         BatColor = "#d69e04"; //orange
-        Notifiy = false;
+        Notifiy = 0;
    }
    else if(NiveauBatteriePourcentTmp <= 55 && NiveauBatteriePourcentTmp > 30)
    {
         BatColor = "#ED9D00"; //yellow
-        Notifiy = false;
+        Notifiy = 0;
+   }
+   else if(NiveauBatteriePourcentTmp <= -10)
+   {
+      BatColor =  "#FF0000"; //red flash
+      Notifiy  = 2;
    }
    else
    {
-        BatColor =  "#D3435C"; //red 
-        Notifiy = true;
+      BatColor =  "#D3435C"; //red 
+      Notifiy = 1;
    }
     Set_Niv_Batterie(NiveauBatteriePourcentTmp,BatColor,Notifiy);
     return;
@@ -224,14 +234,26 @@ void Set_Bat_Niv_Color()
 
 void Heure_Ouverture()
 {
+  int RealTimeInt =  (atoi(RealTimeIA.c_str())) /100;
+  int HeureOuvertureInt = (atoi(HeureOuvertureIA.c_str()))/100;
 
-
-
+  if(RealTimeInt == HeureOuvertureInt)
+  {
+    Set_Position_Desire(100);
+    Set_Motor_Change();
+  }
+  return;
 }
 
 void Heure_Fermeture()
 {
+  int RealTimeInt = (atoi(RealTimeIA.c_str())) /100;
+  int HeureFermetureInt = (atoi(HeureFermetureIA.c_str()))/100;
 
-
-    
+  if(RealTimeInt == HeureFermetureInt)
+  {
+    Set_Position_Desire(0);
+    Set_Motor_Change();
+  }
+  return;
 }

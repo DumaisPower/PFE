@@ -63,15 +63,10 @@ void Config_Init()
 {
   ESP_BT.begin("ESP32_BT");
   Serial.begin(9600);
-
   delay(300); 
 
-  //clear terminal
-  Blynk_Clear_Terminal();
+  console_Debug("ESP setup");
 
-  Blynk_Print_Terminal("Blynk : Device started");
-  Blynk_Print_Terminal("-------------");
-  
   //enable wakup sourcce
   console_Err(esp_sleep_enable_timer_wakeup(8000000), "esp_sleep_enable_timer_wakeup : ");
   console_Err(esp_sleep_enable_ulp_wakeup(), "esp_sleep_enable_ulp_wakeup : ");

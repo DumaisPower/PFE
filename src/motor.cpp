@@ -27,7 +27,7 @@ double TimeToMove;
 double MotorPositionTmp = 0;
 double PositionDesireTmp=0;
 double StepToMoveTmp = 0;
-float LowCurrent;
+int SideMotor;
 
 
 void Motor_Init()
@@ -42,16 +42,11 @@ void Motor_Init()
                     1);                         /* Core id. */
     
   delay(500); 
-  return;
-}
 
-void Motor_Setup()
-{
   stepper.begin(RPM);
 
   Motor_OFF();
-  
-  // Position_Init();
+
   Set_Motor_Pos(0);
 
   Update_Blynk_Motor_Pos();
@@ -59,48 +54,12 @@ void Motor_Setup()
   return;
 }
 
-void Position_Init()
-{
-  Motor_ON();
-
-  stepper.move(1600);
-
-  LowCurrent = Get_Current();
-
-  while(Get_Current() < LowCurrent + DELTA_CURENT_MAX)
-  {
-    stepper.move(-1600);
-    delay(500);
-    if(Timer_Motor(7000))
-    {
-      Blynk_Run();
-    }
-  }
-
-  stepper.move(MOTOR_POS_OFFSET);
-
-  Motor_OFF();
-
-  MotorPositionTmp = 0;
-
-  Set_Motor_Pos(MotorPositionTmp);
-
-  return;
-}
-
-float Get_Current()
-{
-  //read current on the current sensor
-
-  return LowCurrent;
-}
-
 void Task_Moteur(void * parameter)
 {
   
   console_Debug("Task Motor Start");
-  
-  Motor_Setup();
+
+  delay(1000);
 
   xSemaphoreTake(BarrierMotor, portMAX_DELAY);
   xSemaphoreGive(BarrierComz);
@@ -125,6 +84,8 @@ void Task_Moteur(void * parameter)
     Motor_OFF();
 
     Set_Motor_Pos(PositionDesireTmp);
+
+    console_Debug("Exit Motor Task");
 
     xSemaphoreGive(SemaphoreComz); //retourne a comz
 
@@ -163,6 +124,7 @@ void Time_To_Move(double Step)
 
 void Motor_Turn()
 {
+
   while(StepToMoveTmp != 0)
   {
     if(StepToMoveTmp > 2400)

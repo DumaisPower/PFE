@@ -18,8 +18,10 @@
 #define CITY_ID_CHAR 7
 
 /*************************Run mode********************************/
-#define STATE_MANUEL 0
-#define STATE_AUTO 1
+#define STATE_MANUEL 1
+#define STATE_AUTO 0
+#define DROITE -1
+#define GAUCHE 1
 /*************************Default value******************************/
 #define DEFAULT_LENGHT 3
 #define DEFAULT_TEMP_DESIRE 21
@@ -40,7 +42,17 @@
 #define TEMP_DESIRE 11
 #define NIV_SUN 12
 
+/*****************************Time refresh************************/
 #define SENSOR_REFRESH_MILISEC 20000 //900000 = 15 min
+#define MOTOR_WAIT_MILISEC 900000
+
+typedef enum {
+    CHAR,
+    INT,
+    FLOAT,
+    DOUBLE,
+    STRING
+} TYPE;
 
 //tâche principal
 void Task_Communication(void * parameter);
@@ -49,8 +61,6 @@ void Task_Communication(void * parameter);
 //Creation de la tâche comz
 void Comz_Init();
 
-//Setup des comz
-void Comz_Setup();
 
 /**************************Terminal Function******************************************/
 //Print une erreur dans une fonction
@@ -72,7 +82,7 @@ void console_Debug(String StringToPrint);
 void console_Debug_Int(int IntToPrint);
 
 //debug double to terminal
-void console_Debug_Double(double DoubleToPrint);
+void console_Debug_Double(int DoubleToPrint);
 
 String Get_Real_Time();
 
@@ -99,7 +109,7 @@ bool Timer_Sensor(int MiliSeconde);
 bool Get_State_Auto_Manuel();
 
 //set state auto manuel
-void Set_State_Auto_Manuel(bool STATE);
+void Set_State_Auto_Manuel(bool State);
 
 //return l'heure d'ouverture des store
 String Get_Heure_Ouverture();
@@ -107,9 +117,16 @@ String Get_Heure_Ouverture();
 //return l'heure de fermeture des store
 String Get_Heure_Fermeture();
 
-void Set_Niv_Batterie(double NivBat,String ColorCode,bool Notifiy);
+void Set_Niv_Batterie(double NivBat,String ColorCode,int Notifiy);
 
 double Get_Niv_Batterie();
+
+void Update_App_Configuration();
+
+void Blynl_Sync_Virtual(int Pin, String Message, void* Variable,TYPE t);
+
+int Get_Side_Motor();
+
 
 /*************************Get/Set Motor variable************************/
 //set max position in step for the blind
@@ -148,13 +165,12 @@ void Set_Step_To_Move(double PosDesire);
 //return the value of the turn to do
 double Get_Step_To_Move();
 
+void Set_Motor_Wait();
+
+void Reset_Motor_Wait();
+
 
 /*************************Get/Set Sensor variable************************/
-//return the inside temperature get by the analog sensor
-double Get_Inside_Temp_Analog();
-
-//set the inside temperature get by the analog sensor
-void Set_Inside_Temp_Analog(double NewTempAnalog);
 
 //return the inside temperature get by the Infrared sensor
 double  Get_Inside_Temp_IR();

@@ -5,16 +5,18 @@
 #include "freertos/FreeRTOS.h"
 #include "comz.h"
 #include "Arduino.h"
+#include "esp_system.h"
+#include "esp_event.h"
 
-#define ANALOGBAT 20 //temporaire a changer ************************************************************************/
+
+#define ANALOGBAT 25 //temporaire a changer ************************************************************************/
 
 #define NIGHT 0
 #define DAY 1
-#define DAYLIGHTMIN 40
+#define DAYLIGHTMIN 25
 
 void Task_IA(void * parameter);
 void IA_Init();
-void IA_Setup();
 void Change_Mode();
 void Automatique_Position();
 void Update_Local_Variable();

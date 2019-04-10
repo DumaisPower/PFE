@@ -12,15 +12,12 @@
 #define SDA1 23
 #define SCL1 18
 
-#define ANALOGTMP 37
-#define ANALOGSUN 35
+#define ANALOGSUN 37
 
 void Task_Sensor(void * parameter);
 
 void Sensor_Init();
-void Update_Inside_Temp_Analog();
 void Update_Inside_Temp_IR();
 void Update_Object_Temp_IR();
 void Update_Sun();
-void Sensor_Setup();
 #endif // SENSOR_H_

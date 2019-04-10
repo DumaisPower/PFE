@@ -20,7 +20,8 @@
 /*******************Your WiFi credentials******************/
 char ssid[] = "HONDAGMC";
 char pass[] = "18182321yougi";
-char auth[] = "14c79904503442c1aaedbc97d0dd487a";
+char auth[] = "14c79904503442c1aaedbc97d0dd487a"; //marc app
+//char auth[] = "1334465b93034f92ad14742fb88eb305"; //dan app
 
 /********************Widget*****************************/
 WidgetTerminal terminal(TERMINAL);
@@ -31,6 +32,7 @@ extern SemaphoreHandle_t	BarrierComz;
 extern SemaphoreHandle_t	SemaphoreMotor;
 extern SemaphoreHandle_t	SemaphoreSensor;
 extern SemaphoreHandle_t	SemaphoreComz;
+extern SemaphoreHandle_t	SemaphoreIA;
 
 TaskHandle_t TaskCom;
 
@@ -39,7 +41,7 @@ TaskHandle_t TaskCom;
 bool controle = STATE_MANUEL;
 int SetStore;
 int HauteurFenetre;
-
+int TemperatureDesire = DEFAULT_TEMP_DESIRE;
 
 //baterie
 double NiveauBatteriePourcent;
@@ -60,9 +62,9 @@ double MotorPositionPercentage;
 double MaxPosition;
 double StepToMove;
 int i = 0;
+int Side = DROITE;
 
 //capteur
-double insideTempAnalog;
 double insideTempIR;
 double ObjectTempIR;
 double SunLevel;
@@ -73,7 +75,9 @@ unsigned long nextMillisSensor = 0;
 String HeureOuverture;
 String HeureFermeture;
 String RealTime;
-bool StayAwake;
+bool StayAwake = false;
+bool WaitMotor = false;
+unsigned long WaitMotorTime;
 
 void Comz_Init()
 {
@@ -94,21 +98,77 @@ void Comz_Init()
 
   delay(1000); 
 
-  return;
-}
+  //clear terminal
+  Blynk_Clear_Terminal();
 
-void Comz_Setup()
-{
+  delay(1000); 
+
+  Blynk_Print_Terminal("Blynk : Device started");
+  Blynk_Print_Terminal("-------------");
+  
+
+  console_Debug("Comz setup");
+  
   Set_Max_Position(DEFAULT_LENGHT);
 
   delay(500);
 
+  Set_State_Auto_Manuel(STATE_MANUEL);
+
+  delay(500);
+
+  Update_App_Configuration();
+
+  
   return;
 }
 
+void Update_App_Configuration()
+{
+  Blynl_Sync_Virtual(CITY_ID, "City id number:", &CityID ,STRING);
+
+  Blynl_Sync_Virtual(HAUTEUR_FENETRE, "Hauteur de la fenêtre en pied :", &HauteurFenetre ,INT);
+
+  Blynl_Sync_Virtual(HEURE_FERMETURE, "Heure de fermeture du store :", &HeureFermeture ,STRING);
+  
+  Blynl_Sync_Virtual(HEURE_OUVERTURE, "Heure d'ouverture du store :", &HeureOuverture ,STRING);
+
+  Blynl_Sync_Virtual(TEMP_DESIRE, "Température intérieur désiré :", &TemperatureDesire ,INT);
+
+  return;
+
+}
+
+void Blynl_Sync_Virtual(int Pin, String Message, void* Variable ,TYPE t)
+{
+  Blynk.syncVirtual(Pin);
+
+  console_Debug(Message);
+
+  if(t == STRING)
+  {
+    String* StringTmp1 = (String*)Variable;
+    String StringTmp2 = *StringTmp1;
+    console_Debug(StringTmp2);
+  }
+  else if(t == DOUBLE)
+  {
+    double* DoubleTmp1 = (double*)Variable;
+    double DoubleTmp2 = *DoubleTmp1;
+    console_Debug_Double(DoubleTmp2);
+  }
+  else if(t == INT)
+  {
+    int* IntTmp1 = (int*)Variable;
+    int IntTmp2 = *IntTmp1;
+    console_Debug_Int(IntTmp2);
+  }
+  return;
+}
+
+
 void Task_Communication(void * parameter)
 {
-  Comz_Setup();
 
   //waiting every task to be setup
   xSemaphoreTake(BarrierComz, portMAX_DELAY);
@@ -126,7 +186,8 @@ void Task_Communication(void * parameter)
 
       Set_Outside_Temp();//do the json black magic
 
-      //xSemaphoreGive(SemaphoreIA);//do IA task                  not yet implement
+      xSemaphoreGive(SemaphoreIA);//do IA task                  not yet implement
+      xSemaphoreTake(SemaphoreComz,portMAX_DELAY);//wait for return of sensor
 
       Update_Blynk_Sensor();
 
@@ -140,8 +201,8 @@ void Task_Communication(void * parameter)
         i++;  
       }
     }  
-    
-    if(MotorChange)
+
+    if(MotorChange && !WaitMotor)
     { 
       xSemaphoreGive(SemaphoreMotor);//do motor taksk
       xSemaphoreTake(SemaphoreComz,portMAX_DELAY);//wait for return of motor
@@ -160,6 +221,14 @@ void Task_Communication(void * parameter)
         StayAwake = true;
       }
     }
+    else if(WaitMotor)
+    {
+      if(WaitMotorTime >= WaitMotorTime + 900000)
+      {
+        Reset_Motor_Wait();
+      }
+    }
+    
     
     //while no change go to sleep
     if(!StayAwake)
@@ -187,9 +256,6 @@ void Update_Blynk_Sensor()
 
   console_Debug("ambiant IR temp");
   console_Debug_Double(insideTempIR); 
-
-  console_Debug("ambiant Analog temp");
-  console_Debug_Double(insideTempAnalog);
 
   return;
 }
@@ -289,7 +355,7 @@ void console_Debug_Int(int IntToPrint)
   return;
 }
 
-void console_Debug_Double(double DoubleToPrint)
+void console_Debug_Double(int DoubleToPrint)
 {
   terminal.println(DoubleToPrint);
   Blynk_Flush_Terminal();
@@ -316,14 +382,14 @@ BLYNK_WRITE(WEBHOOK) //WEBHOOK
 
 BLYNK_WRITE(HAUTEUR_FENETRE) 
 {
-  HauteurFenetre = param.asInt();
+  HauteurFenetre = param.asInt() + 1;
   return;
 }
 
 BLYNK_WRITE(NIV_STORE_MAN)
 {
   SetStore = param.asInt();  
-  if(controle ==  STATE_MANUEL)
+  if(controle == STATE_MANUEL)
   {
     Set_Position_Desire(SetStore);
     Set_Step_To_Move(Get_Position_Desire());
@@ -343,7 +409,7 @@ BLYNK_WRITE(CITY_ID)
   CityIDTmp = param.asInt();  // met la valeur du slider dans la variable setStore
   if (CityIDTmp.length() == CITY_ID_CHAR )
   {
-   CityID = CityIDTmp;
+    CityID = CityIDTmp;
   }
   else
   {
@@ -362,16 +428,21 @@ BLYNK_WRITE(AUTO_MAN) // SWITCH MANUEL/AUTO
 {
   switch (param.asInt())
   {
-    case 1: { 
-        controle = STATE_MANUEL;
-        break;
-      }
-    case 2: { 
-        controle = STATE_AUTO;
-        break;
-      }
+    case 1: 
+    { 
+      controle = STATE_MANUEL;
+      console_Debug("Mode Manuel");
+      break;
     }
-    return;
+    case 0: 
+    { 
+      controle = STATE_AUTO;
+      console_Debug("Mode Automatique");
+      break;
+    }
+  }
+  
+  return;
 }
 
 BLYNK_WRITE(HEURE_OUVERTURE)
@@ -399,9 +470,9 @@ bool Get_State_Auto_Manuel()
   return  controle;
 }
 
-void Set_State_Auto_Manuel(bool STATE)
+void Set_State_Auto_Manuel(bool State)
 {
-  Blynk_Virtual_Write(AUTO_MAN,STATE);
+  Blynk.virtualWrite(AUTO_MAN,State);
   return;
 }
 
@@ -478,16 +549,6 @@ double Get_Motor_Pos()
   return MotorPosition;
 }
 
-double Get_Inside_Temp_Analog()
-{
-  return insideTempAnalog;
-}
-
-void Set_Inside_Temp_Analog(double NewTempAnalog)
-{
-  insideTempAnalog = NewTempAnalog;
-  return ;
-}
 
 double  Get_Inside_Temp_IR()
 {
@@ -524,9 +585,14 @@ double Get_Sun()
 
 void Set_Step_To_Move(double PosDesire)
 {
-  StepToMove = PosDesire - MotorPosition;
+  StepToMove = (PosDesire - MotorPosition) * Side;
   
   return;
+}
+
+int Get_Side_Motor()
+{
+  return Side;
 }
 
 double Get_Step_To_Move()
@@ -534,13 +600,18 @@ double Get_Step_To_Move()
   return StepToMove;
 }
 
-void Set_Niv_Batterie(double NivBat,String ColorCode,bool Notifiy)
+void Set_Niv_Batterie(double NivBat,String ColorCode,int Notifiy)
 {
   Blynk_Virtual_Write(NIV_BAT,NivBat);
+
   Blynk.setProperty(NIV_BAT,"color",ColorCode);
-  if(Notifiy)
+  if(Notifiy == 1)
   {
-    Blynk.notify("La batterie du store est base");
+    Blynk.notify("La batterie du store est basse");
+  }
+  else if(Notifiy == 2)
+  {
+    Blynk.notify("La batterie est déconnecté");
   }
   
   return;
@@ -553,6 +624,25 @@ double Get_Niv_Batterie()
 
 String Get_Real_Time()
 {
-  RealTime = String(hour() + ":" + minute());
+  int houres = hour();
+  int minutes = minute();
+  int tmp;
+  houres = houres * 3600;
+  minutes = minutes * 60;
+  tmp = houres + minutes;
+  RealTime = (String)tmp;
   return RealTime;
+}
+
+void Set_Motor_Wait()
+{
+  WaitMotor = true;
+  WaitMotorTime = millis();
+  return;
+}
+
+void Reset_Motor_Wait()
+{
+  WaitMotor = false;
+  return;
 }

@@ -23,7 +23,6 @@ extern SemaphoreHandle_t	BarrierSensor;
 extern SemaphoreHandle_t	SemaphoreComz;
 
 /******************Variable**********************/
-double insideTempAnalogTmp;
 double insideTempIRTmp;
 double ObjectTempIRTmp;
 double SunLevelTmp;
@@ -43,24 +42,24 @@ void Sensor_Init()
 
   delay(500); 
 
+  console_Debug("Capteur setup");
+
   Wire.begin(SDA1,SCL1);
 
-  return;
-}
+  delay(500); 
 
-void Sensor_Setup()
-{
-  pinMode(ANALOGTMP,INPUT);
   pinMode(ANALOGSUN,INPUT);
 
   return;
 }
 
+
+
 void Task_Sensor(void * parameter)
 {
   console_Debug("Task Sensor Start");
-  
-  Sensor_Setup();
+
+  delay(1000);
 
   xSemaphoreTake(BarrierSensor,portMAX_DELAY);
   xSemaphoreGive(BarrierMotor);//retourne a motor
@@ -75,7 +74,6 @@ void Task_Sensor(void * parameter)
     console_Debug("Doing Sensor Task");
 
     //update the sensor value
-    Update_Inside_Temp_Analog();
 
     Update_Sun(); //~1000 = noir total , ~2000= normal , ~3000= soleil
       
@@ -83,14 +81,13 @@ void Task_Sensor(void * parameter)
 
     Update_Object_Temp_IR();
 
-    //set the sensor value 
-    Set_Inside_Temp_Analog(insideTempAnalogTmp);
-
     Set_Sun(SunLevelTmp); //~1000 = noir total , ~2000= normal , ~3000= soleil
       
     Set_Inside_Temp_IR(insideTempIRTmp);
 
     Set_Object_Temp_IR(ObjectTempIRTmp);
+
+    console_Debug("Exit Sensor Task");
 
     xSemaphoreGive(SemaphoreComz); //retourne a comz
 
@@ -98,14 +95,6 @@ void Task_Sensor(void * parameter)
   vTaskDelete( NULL );
 }
 
-void Update_Inside_Temp_Analog()
-{
-  uint16_t Tempon;
-  Tempon = analogRead(ANALOGTMP);
-  insideTempAnalogTmp = ((Tempon*(3300.00/1024.00) - 350) / 100.000);
-
-  return ;
-}
 
 void  Update_Inside_Temp_IR()
 {
@@ -128,7 +117,7 @@ void Update_Object_Temp_IR()
 void Update_Sun()
 {
   SunLevelTmp = analogRead(ANALOGSUN);
-  SunLevelTmp = (SunLevelTmp /4096 ) * 100;
+  SunLevelTmp = (int)((SunLevelTmp /4096 ) * 100);
 
   return ;
 }
