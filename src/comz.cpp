@@ -18,8 +18,8 @@
 #include <WidgetRTC.h>
 
 /*******************Your WiFi credentials******************/
-char ssid[] = "HONDAGMC";
-char pass[] = "18182321yougi";
+char ssid[] = "iPhone de Dany";
+char pass[] = "12345678";
 char auth[] = "14c79904503442c1aaedbc97d0dd487a"; //marc app
 //char auth[] = "1334465b93034f92ad14742fb88eb305"; //dan app
 
@@ -117,13 +117,23 @@ void Comz_Init()
 
   Update_App_Configuration();
 
-  if(HAUTEUR_FENETRE ==0)
+  console_Debug_Int(HauteurFenetre);
+
+  if(HauteurFenetre == 0)
   {
     Set_Max_Position(DEFAULT_LENGHT);
   }
-  else
+  else if (HauteurFenetre == 1)
   {
-    Set_Max_Position(HAUTEUR_FENETRE);
+    Set_Max_Position(30);
+  }
+  else if(HauteurFenetre == 6)
+  {
+     Set_Max_Position(40);
+  }
+  else if(HauteurFenetre == 10)
+  {
+     Set_Max_Position(48);
   }
 
   
@@ -284,15 +294,23 @@ double Percentage_To_Step(double percentage)
   return (percentage / 100) * MaxPosition;
 }
 
-void Set_Max_Position(double Feet)
+void Set_Max_Position(double Inch)
 {
   //formule qui convertie le nombre de metre en step
-  double MaxMM = Feet * 304.8;
-  double MMParTour = 2*PI*GEAR_SIZE_MM;
-  double NbTour = (MaxMM / MMParTour) - MOTOR_POS_OFFSET;
+  double NbTour = Inch / TourEnInch;
+  MaxPosition = (NbTour - 2) * 800; 
 
-  MaxPosition = NbTour * MOTOR_STEPS; 
   return;
+}
+
+double Get_Max_Position()
+{
+  return MaxPosition;
+}
+
+int Get_Side()
+{
+  return Side;
 }
 
 void Go_To_Sleep()
@@ -393,7 +411,7 @@ BLYNK_WRITE(WEBHOOK) //WEBHOOK
 
 BLYNK_WRITE(HAUTEUR_FENETRE) 
 {
-  HauteurFenetre = param.asInt() + 1;
+  HauteurFenetre = param.asInt() ;
   return;
 }
 
@@ -484,6 +502,7 @@ bool Get_State_Auto_Manuel()
 void Set_State_Auto_Manuel(bool State)
 {
   Blynk.virtualWrite(AUTO_MAN,State);
+  controle =State;
   return;
 }
 

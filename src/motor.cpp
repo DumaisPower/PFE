@@ -58,16 +58,17 @@ void Motor_Init()
 void Position_Init()
 {
   //change speed too limit stall
+  stepper.begin(25);
 
-  MotorPositionOffset = 2*PI*GEAR_SIZE_MM * MOTOR_POS_OFFSET;
+  MotorPositionOffset = MOTOR_STEPS * MOTOR_POS_OFFSET ;
 
   Motor_ON();
 
-  StepToMoveTmp = MaxPosition * Side;
+  StepToMoveTmp = -1 *  Get_Max_Position() * Get_Side();
 
   Motor_Turn();
 
-  StepToMoveTmp = -1 * MotorPositionOffset * Side;
+  StepToMoveTmp =   MotorPositionOffset * Get_Side();
 
   Motor_Turn();
 
@@ -76,6 +77,7 @@ void Position_Init()
   Set_Motor_Pos(0);
 
   //change back to 20 rpm
+  stepper.begin(RPM);
 
   return;
 
@@ -159,6 +161,12 @@ void Motor_Turn()
     {
       stepper.move(2400);
       StepToMoveTmp = StepToMoveTmp - 2400;
+      Blynk_Run();
+    }
+    else if(StepToMoveTmp < -2400)
+    {
+      stepper.move(-2400);
+      StepToMoveTmp = StepToMoveTmp + 2400;
       Blynk_Run();
     }
     else

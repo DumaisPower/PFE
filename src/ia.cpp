@@ -137,7 +137,7 @@ void Automatique_Position()
       }
     }
     //condition pour fermer le store
-    else if(((OutsideTempIA - InsideTempIRIA >= 1) or (InsideTempIRIA >= TemperatureDesireIA )) and (SunLevelIA >= WINDOWSUN) or ((ObjectTempIRIA >= InsideTempIRIA) and (OutsideTempIA - InsideTempIRIA >= 4)))
+    else if((((OutsideTempIA - InsideTempIRIA >= 1) or (InsideTempIRIA >= TemperatureDesireIA )) and (SunLevelIA >= WINDOWSUN)) or ((ObjectTempIRIA >= InsideTempIRIA) and (OutsideTempIA - InsideTempIRIA >= 4)))
     {
       if(MotorPosIA != 100)
       {
@@ -259,12 +259,12 @@ void Set_Bat_Niv_Color()
    else if(NiveauBatteriePourcentTmp <= -10)
    {
       BatColor =  "#FF0000"; //red flash
-      Notifiy  = 2;
+      //Notifiy  = 2;
    }
    else
    {
       BatColor =  "#D3435C"; //red 
-      Notifiy = 1;
+      //Notifiy = 1;
    }
     Set_Niv_Batterie(NiveauBatteriePourcentTmp,BatColor,Notifiy);
     return;

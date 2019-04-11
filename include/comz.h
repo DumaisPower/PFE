@@ -23,7 +23,7 @@
 #define DROITE -1
 #define GAUCHE 1
 /*************************Default value******************************/
-#define DEFAULT_LENGHT 3
+#define DEFAULT_LENGHT 30
 #define DEFAULT_TEMP_DESIRE 21
 #define DEFAULT_CITY_ID "6077243"
 
@@ -43,10 +43,10 @@
 #define NIV_SUN 12
 
 /*****************************Time refresh************************/
-#define SENSOR_REFRESH_MILISEC 20000 //900000 = 15 min
+#define SENSOR_REFRESH_MILISEC 5000 //900000 = 15 min
 #define MOTOR_WAIT_MILISEC 900000
 /*****************************Other constant***************************/
-#define GEAR_SIZE_MM 25
+#define TourEnInch  2.05
 
 typedef enum {
     CHAR,
@@ -129,6 +129,8 @@ void Blynl_Sync_Virtual(int Pin, String Message, void* Variable,TYPE t);
 
 int Get_Side_Motor();
 
+int Get_Temp_Desirer();
+
 
 /*************************Get/Set Motor variable************************/
 //set max position in step for the blind
@@ -170,6 +172,10 @@ double Get_Step_To_Move();
 void Set_Motor_Wait();
 
 void Reset_Motor_Wait();
+
+double Get_Max_Position();
+
+int Get_Side();
 
 
 /*************************Get/Set Sensor variable************************/
